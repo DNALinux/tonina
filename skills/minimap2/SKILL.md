@@ -27,36 +27,38 @@ The decision between BWA, BWA=MEM2 and minimap2 is primarily driven by read leng
 
 Note that there is a docker (dnalinux/minimap2) that has *minimap2* as entry point, so you don't need to specify the command.
 
+The docker command mounts your current directory to `/ftmp` inside the container. All file paths in the examples below are relative to `/ftmp/`, which maps to wherever you run the command from.
+
 To get a Pairwise Alignment Format (PAF) of a reference genome and a query sequence file (like SSR3p.fastq), without base-level alignment (i.e. coordinates are only approximate and no CIGAR in output):
 
 ```bash
-docker run --network=none -v $(pwd):/ftmp dnalinux/minimap2 /ftmp/.openclaw/workspace/ncbi_dataset/data/GCA_000005845.2/GCA_000005845.2_ASM584v2_genomic.fna /ftmp/SSR3p.fastq > mapping.paf
+docker run --network=none -v $(pwd):/ftmp dnalinux/minimap2 /ftmp/reference.fna /ftmp/query.fastq > mapping.paf
 ```
 
 To output a cigar file:
 
 ```bash
-docker run --network=none -v $(pwd):/ftmp dnalinux/minimap2 -c /ftmp/.openclaw/workspace/ncbi_dataset/data/GCA_000005845.2/GCA_000005845.2_ASM584v2_genomic.fna /ftmp/SSR3p.fastq > align.paf
+docker run --network=none -v $(pwd):/ftmp dnalinux/minimap2 -c /ftmp/reference.fna /ftmp/query.fastq > align.paf
 ```
 
 To output a SAM file:
 
 ```bash
-docker run --network=none -v $(pwd):/ftmp dnalinux/minimap2 -a /ftmp/.openclaw/workspace/ncbi_dataset/data/GCA_000005845.2/GCA_000005845.2_ASM584v2_genomic.fna /ftmp/SSR3p.fastq > alignment.sam
+docker run --network=none -v $(pwd):/ftmp dnalinux/minimap2 -a /ftmp/reference.fna /ftmp/query.fastq > alignment.sam
 ```
 
 Minimap2 seamlessly works with gzip'd FASTA and FASTQ formats as input. You don't need to convert between FASTA and FASTQ or decompress gzip'd files first.
 
-For the human reference genome, minimap2 takes a few minutes to generate a minimizer index for the reference before mapping. To reduce indexing time, you can optionally save the index with option -d and replace the reference sequence file with the index file on the minimap2 command line. Generate an index:
+For large reference genomes, minimap2 takes a few minutes to generate a minimizer index before mapping. To reduce indexing time, you can optionally save the index with option `-d` and replace the reference sequence file with the index file on the minimap2 command line. Generate an index:
 
 ```bash
-docker run --network=none -v $(pwd):/ftmp dnalinux/minimap2 -d /ftmp/ref.mmi /ftmp/.openclaw/workspace/ncbi_dataset/data/GCA_000005845.2/GCA_000005845.2_ASM584v2_genomic.fna
+docker run --network=none -v $(pwd):/ftmp dnalinux/minimap2 -d /ftmp/ref.mmi /ftmp/reference.fna
 ```
 
 To use the index for mapping:
 
 ```bash
-docker run --network=none -v $(pwd):/ftmp dnalinux/minimap2 -a /ftmp/ref.mmi /ftmp/SSR3p.fastq > alignment.sam
+docker run --network=none -v $(pwd):/ftmp dnalinux/minimap2 -a /ftmp/ref.mmi /ftmp/query.fastq > alignment.sam
 ```
 
 When doing an alignment with an index, the output will be similar to the following:
@@ -75,5 +77,3 @@ When doing an alignment with an index, the output will be similar to the followi
 From this use the last 3 lines to get the version, the command and the runtime information. Inform these parameters to the user.
 
 Importantly, it should be noted that once you build the index, indexing parameters such as -k, -w, -H and -I can't be changed during mapping. If you are running minimap2 for different data types, you will probably need to keep multiple indexes generated with different parameters. This makes minimap2 different from BWA which always uses the same index regardless of query data types.
-
-

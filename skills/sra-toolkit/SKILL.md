@@ -1,0 +1,111 @@
+---
+name: SRA-TOOLKIT
+description: "Uses sra-toolkit docker to download sequences from the SRA (Sequence Read Archive) database."
+metadata:
+  openclaw:
+    emoji: "🧬"
+    requires:
+      bins: ["docker"]
+    install:
+      - id: apt
+        kind: apt
+        package: podman-docker
+        bins: ["podman", "docker"]
+        label: "Install Docker"
+---
+
+# SRA TOOLKIT Skill
+
+The SRA Toolkit is a set of programs for working with data in the SRA (Sequence Read Archive) database. It provides tools for downloading, uploading, and managing sequence data.
+
+## When to use it
+
+Use the SRA Toolkit to:
+
+* Download sequence data from the SRA database
+* Upload sequence data to the SRA database
+* Manage sequence data in the SRA database
+
+
+## SRA TOOLKIT Usage
+
+Note that there is a docker (dnalinux/sra-toolkit) that provides the sra-toolkit commands.
+
+The docker command mounts your current directory to `/ftmp` inside the container. All file paths in the examples below are relative to `/ftmp/`, which maps to wherever you run the command from.
+
+The fasterq-dump tool extracts data in FASTQ- or FASTA-format from SRA-accessions. Fasterq-dump is the successor to the older fastq-dump tool, but faster. However: it is not a drop-in replacement, options and defaults are different.
+
+The tool has one mandatory argument: the accession.
+
+To download a sequence from the SRA database, if the accession number is SRR15536067:
+
+
+```bash
+docker run --rm -v $(pwd):/ftmp dnalinux/sra-toolkit:3.4.1-bin fasterq-dump SRR15536067 --outdir /ftmp
+```
+
+fasterq-dump modes:
+
+
+| Mode | Variant | Command | Output |
+|---|---|---|---|
+| **split-3** | (default) | `fasterq-dump SRRXXXXXXX` or `fasterq-dump --split-3 SRRXXXXXXX` | Multiple files |
+| **split-files** | without technical | `fasterq-dump --split-files SRRXXXXXXX` or `fasterq-dump --split-files --skip-technical SRRXXXXXXX` | Multiple files |
+| **split-files** | with technical | `fasterq-dump --split-files --include-technical SRRXXXXXXX` | Single file |
+| **split-spot** | without technical | `fasterq-dump --split-spot SRRXXXXXXX` or `fasterq-dump --split-spot --skip-technical SRRXXXXXXX` | Single file |
+| **split-spot** | with technical | `fasterq-dump --split-spot --include-technical SRRXXXXXXX` | Single file |
+| **concatenate-reads** | — | `fasterq-dump --concatenate-reads SRRXXXXXXX` | Single file |
+
+
+# Options
+
+
+
+| Flag | Long form | Description |
+|---|---|---|
+| | `<path>` or `<accession>` | Input: local path or SRA accession |
+| `-F` | `--format` | Format: special, fastq (default=fastq) |
+| `-o` | `--outfile` | Output file name |
+| `-O` | `--outdir` | Output directory |
+| `-b` | `--bufsize` | File buffer size (default=1MB) |
+| `-c` | `--curcache` | Cursor cache size (default=10MB) |
+| `-m` | `--mem` | Memory limit for sorting (default=100MB) |
+| `-t` | `--temp` | Temp files location (default=current dir) |
+| `-e` | `--threads` | Number of threads (default=6) |
+| `-p` | `--progress` | Show progress |
+| `-x` | `--details` | Print details |
+| `-s` | `--split-spot` | Split spots into reads |
+| `-S` | `--split-files` | Write reads into different files |
+| `-3` | `--split-3` | Write single reads into special file (default) |
+| | `--concatenate-reads` | Write whole spots into one file |
+| `-Z` | `--stdout` | Print output to stdout |
+| `-f` | `--force` | Force overwrite of existing file(s) |
+| | `--skip-technical` | Skip technical reads |
+| | `--include-technical` | Include technical reads |
+| `-M` | `--min-read-len` | Filter by sequence length |
+| | `--table` | Seq-table to use (PacBio) |
+| `-B` | `--bases` | Filter by bases |
+| `-A` | `--append` | Append to output file |
+| | `--fasta` | Produce FASTA output |
+| | `--fasta-unsorted` | Produce FASTA output, unsorted |
+| | `--fasta-ref-tbl` | Produce FASTA from REFERENCE table |
+| | `--fasta-concat-all` | Concatenate all rows into FASTA |
+| | `--internal-ref` | Extract only internal REFERENCEs |
+| | `--external-ref` | Extract only external REFERENCEs |
+| | `--ref-name` | Extract only specified REFERENCEs |
+| | `--ref-report` | Enumerate references |
+| | `--use-name` | Print name instead of seq-id |
+| | `--seq-defline` | Custom defline for sequence (`$ac`, `$sn`, `$sg`, `$si`, `$ri`, `$rl`) |
+| | `--qual-defline` | Custom defline for qualities (same as `--seq-defline`) |
+| `-U` | `--only-unaligned` | Process only unaligned reads |
+| `-a` | `--only-aligned` | Process only aligned reads |
+| | `--disk-limit` | Explicitly set disk limit |
+| | `--disk-limit-tmp` | Explicitly set disk limit for temp files |
+| | `--size-check` | Size check control: `on` (default), `off`, or `only` |
+| | `--ngc <PATH>` | Path to ngc file |
+| `-h` | `--help` | Show help |
+| `-V` | `--version` | Display version and quit |
+| `-L` | `--log-level` | Log level: `fatal\|sys\|int\|err\|warn\|info\|debug` or `0–6` (default=warn) |
+| `-v` | `--verbose` | Increase verbosity (repeatable, negates quiet) |
+| `-q` | `--quiet` | Suppress all status messages (negated by verbose) |
+| | `--option-file <file>` | Read options from file |

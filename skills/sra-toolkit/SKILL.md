@@ -44,8 +44,25 @@ To download a sequence from the SRA database, if the accession number is SRR1553
 docker run --rm -v $(pwd):/ftmp dnalinux/sra-toolkit:3.4.1-bin fasterq-dump SRR15536067 --outdir /ftmp
 ```
 
-fasterq-dump modes:
+Note that the location (output directory) of the output-files can be changed with --outdir
 
+If parts of the output-path do not exist, it will be created. If the output-files already exist, the tool will not overwrite them, but fail instead. If you want already existing output-files to be overwritten, use the force option -f.
+
+The location of the temporary directory can be changed too:
+
+
+```bash
+docker run --rm -v $(pwd):/ftmp dnalinux/sra-toolkit:3.4.1-bin fasterq-dump SRR15536067 --outdir /ftmp -t /tmp/scratch
+```
+
+Now the temporary files will be created in the '/tmp/scratch' directory. These temporary files will be deleted on finish, but the directory itself will not be deleted. If the temporary directory does not exist, it will be created.
+
+It is helpful for the speed-up, if the output-path and the scratch-path are on different file-systems. For instance it is a good idea to point the temporary directory to a SSD if available or a RAM-disk like /dev/shm if enough RAM is available.
+
+
+## fasterq-dump modes
+
+### fastq
 
 | Mode | Variant | Command | Output |
 |---|---|---|---|
@@ -55,6 +72,21 @@ fasterq-dump modes:
 | **split-spot** | without technical | `fasterq-dump --split-spot SRRXXXXXXX` or `fasterq-dump --split-spot --skip-technical SRRXXXXXXX` | Single file |
 | **split-spot** | with technical | `fasterq-dump --split-spot --include-technical SRRXXXXXXX` | Single file |
 | **concatenate-reads** | — | `fasterq-dump --concatenate-reads SRRXXXXXXX` | Single file |
+
+
+### fasta
+
+| Mode | Variant | Command | Output |
+|---|---|---|---|
+| **split-3** | (default) | `fasterq-dump --fasta SRRXXXXXXX` or `fasterq-dump --fasta --split-3 SRRXXXXXXX` | Multiple files |
+| **split-files** | without technical | `fasterq-dump --fasta --split-files SRRXXXXXXX` or `fasterq-dump --fasta --split-files --skip-technical SRRXXXXXXX` | Multiple files |
+| **split-files** | with technical | `fasterq-dump --fasta --split-files --include-technical SRRXXXXXXX` | Single file |
+| **split-spot** | without technical | `fasterq-dump --fasta --split-spot SRRXXXXXXX` or `fasterq-dump --fasta --split-spot --skip-technical SRRXXXXXXX` | Single file |
+| **split-spot** | with technical | `fasterq-dump --fasta --split-spot --include-technical SRRXXXXXXX` | Single file |
+| **concatenate-reads** | — | `fasterq-dump --fasta --concatenate-reads SRRXXXXXXX` | Single file |
+| **unsorted** | without technical | `fasterq-dump --fasta-unsorted SRRXXXXXXX` or `fasterq-dump --fasta-unsorted --skip-technical SRRXXXXXXX` | Single file |
+| **unsorted** | with technical | `fasterq-dump --fasta-unsorted --include-technical SRRXXXXXXX` | Single file |
+
 
 
 # Options

@@ -66,9 +66,7 @@ Inside that directory, you will find the following files:
 Icons  Images  fastqc.fo  fastqc_data.txt  fastqc_report.html  summary.txt
 ```
 
-From those, is important of summary.txt.
-
-Read the summary.txt file to get a quick overview of the quality of the data. Send this summary to the user.
+From those, is important to check summary.txt. Read the summary.txt file to get a quick overview of the quality of the data. Send this summary to the user.
 
 ```
 $ cat tmp/SRR30545881_1_fastqc/summary.txt

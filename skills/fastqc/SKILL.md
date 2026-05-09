@@ -49,16 +49,41 @@ Note that there is a docker (dnalinux/fastqc) that provides the fastqc command.
 
 The docker command mounts your current directory to `/ftmp` inside the container. All file paths in the examples below are relative to `/ftmp/`, which maps to wherever you run the command from.
 
-
+If the files to be analyzed are in the tmp/sra-output subdirectory, you can use the following command:
 
 
 ```bash
-docker run --network=none -v $(pwd):/ftmp dnalinux/fastqc:latest /ftmp/query.fastq
+podman run --rm --network=none -v $(pwd):/ftmp dnalinux/fastqc:latest sh -c "fastqc /ftmp/sra-output/SRR30545881*.fastq -o /ftmp/tmp/ --extract"
 ```
 
+Note the need to use -o to specify the output directory and --extract to extract the contents of the zip files. This will create directories for each file analyzed.
 
+For file SRR30545881_1.fastqc, it will create a directory named SRR30545881_1_fastqc.
 
+Inside that directory, you will find the following files:
 
+```
+Icons  Images  fastqc.fo  fastqc_data.txt  fastqc_report.html  summary.txt
+```
+
+From those, is important of summary.txt.
+
+Read the summary.txt file to get a quick overview of the quality of the data. Send this summary to the user.
+
+```
+$ cat tmp/SRR30545881_1_fastqc/summary.txt
+PASS    Basic Statistics        SRR30545881_1.fastq
+PASS    Per base sequence quality       SRR30545881_1.fastq
+PASS    Per tile sequence quality       SRR30545881_1.fastq
+PASS    Per sequence quality scores     SRR30545881_1.fastq
+FAIL    Per base sequence content       SRR30545881_1.fastq
+FAIL    Per sequence GC content SRR30545881_1.fastq
+PASS    Per base N content      SRR30545881_1.fastq
+PASS    Sequence Length Distribution    SRR30545881_1.fastq
+PASS    Sequence Duplication Levels     SRR30545881_1.fastq
+PASS    Overrepresented sequences       SRR30545881_1.fastq
+FAIL    Adapter Content SRR30545881_1.fastq
+```
 
 
 # FastQC CLI Options Reference

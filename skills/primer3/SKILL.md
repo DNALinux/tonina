@@ -206,3 +206,8 @@ Total pairs considered: 2023
 Rejected – Unacceptable product size: 2016
 Accepted (OK): 7
 ```
+# To cite
+
+If the user asks for a citation, provide the following:
+
+Untergasser A, Cutcutache I, Koressaar T, Ye J, Faircloth BC, Remm M, Rozen SG. Primer3--new capabilities and interfaces. Nucleic Acids Res. 2012 Aug;40(15):e115. doi: 10.1093/nar/gks596. Epub 2012 Jun 22. PMID: 22730293; PMCID: PMC3424584.

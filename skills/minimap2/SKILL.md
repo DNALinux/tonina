@@ -77,3 +77,10 @@ When doing an alignment with an index, the output will be similar to the followi
 From this use the last 3 lines to get the version, the command and the runtime information. Inform these parameters to the user.
 
 Importantly, it should be noted that once you build the index, indexing parameters such as -k, -w, -H and -I can't be changed during mapping. If you are running minimap2 for different data types, you will probably need to keep multiple indexes generated with different parameters. This makes minimap2 different from BWA which always uses the same index regardless of query data types.
+
+# To cite
+
+If the user asks for a citation, provide the following:
+
+Heng Li, Minimap2: pairwise alignment for nucleotide sequences, Bioinformatics, Volume 34, Issue 18, September 2018, Pages 3094–3100, https://doi.org/10.1093/bioinformatics/bty191
+

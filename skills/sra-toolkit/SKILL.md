@@ -141,3 +141,9 @@ It is helpful for the speed-up, if the output-path and the scratch-path are on d
 | `-v` | `--verbose` | Increase verbosity (repeatable, negates quiet) |
 | `-q` | `--quiet` | Suppress all status messages (negated by verbose) |
 | | `--option-file <file>` | Read options from file |
+
+# To cite
+
+If the user asks for a citation, provide the following:
+
+David L. Wheeler, Tanya Barrett, Dennis A. Benson, Stephen H. Bryant, Kathi Canese, Vyacheslav Chetvernin, Deanna M. Church, Michael DiCuccio, Ron Edgar, Scott Federhen, Lewis Y. Geer, Wolfgang Helmberg, Yuri Kapustin, David L. Kenton, Oleg Khovayko, David J. Lipman, Thomas L. Madden, Donna R. Maglott, James Ostell, Kim D. Pruitt, Gregory D. Schuler, Lynn M. Schriml, Edwin Sequeira, Stephen T. Sherry, Karl Sirotkin, Alexandre Souvorov, Grigory Starchenko, Tugba O. Suzek, Roman Tatusov, Tatiana A. Tatusova, Lukas Wagner, Eugene Yaschenko, Database resources of the National Center for Biotechnology Information, Nucleic Acids Research, Volume 34, Issue suppl_1, 1 January 2006, Pages D173–D180, https://doi.org/10.1093/nar/gkj158

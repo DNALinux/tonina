@@ -135,3 +135,9 @@ FAIL    Adapter Content SRR30545881_1.fastq
 | Flag | Long Form | Description |
 |------|-----------|-------------|
 | `-d` | `--dir` | Directory for temporary files used during report image generation. Defaults to the system temp directory. |
+
+# To cite
+
+If the user asks for a citation, provide the following:
+
+Andrews S., A quality control tool for high throughput sequence data. 2010. http://www.bioinformatics.babraham.ac.uk/projects/fastqc/. 

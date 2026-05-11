@@ -102,4 +102,9 @@ This is a list of accessions for common organisms:
 [3]: https://www.animalgenome.org/QTLdb/doc/genome_versions?utm_source=chatgpt.com "Animal QTL database: genome versions information"
 [4]: https://hgdownload.cse.ucsc.edu/gbdb/xenTro10/html/description.html?utm_source=chatgpt.com "hgdownload.cse.ucsc.edu"
 
+# To cite
+
+If the user asks for a citation, provide the following:
+
+O'Leary NA, Cox E, Holmes JB, Anderson WR, Falk R, Hem V, Tsuchiya MTN, Schuler GD, Zhang X, Torcivia J, Ketter A, Breen L, Cothran J, Bajwa H, Tinne J, Meric PA, Hlavina W, Schneider VA. Exploring and retrieving sequence and metadata for species across the tree of life with NCBI Datasets. Sci Data. 2024 Jul 5;11(1):732. doi: 10.1038/s41597-024-03571-y. PMID: 38969627; PMCID: PMC11226681.
 

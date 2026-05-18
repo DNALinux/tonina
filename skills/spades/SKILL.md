@@ -46,7 +46,7 @@ This is the most common use case with standard Illumina paired-end reads:
 
 
 ```bash
-docker run --network=none -v $(pwd):/ftmp dnalinux/spades spades.py -1 reads_R1.fastq.gz -2 reads_R2.fastq.gz -o output_directory
+docker run --network=none -v $(pwd):/ftmp dnalinux/spades spades.py -1 /ftmp/reads_R1.fastq.gz -2 /ftmp/reads_R2.fastq.gz -o /ftmp/output_directory
 ```
 
 - `-1`: Forward reads
@@ -58,9 +58,9 @@ Using both paired-end and mate-pair libraries for better scaffolding:
 
 ```bash
 docker run --network=none -v $(pwd):/ftmp dnalinux/spades spades.py \
-  --pe1-1 pe_reads_R1.fastq.gz --pe1-2 pe_reads_R2.fastq.gz \
-  --mp1-1 mp_reads_R1.fastq.gz --mp1-2 mp_reads_R2.fastq.gz \
-  -o output_directory
+  --pe1-1 /ftmp/pe_reads_R1.fastq.gz --pe1-2 /ftmp/pe_reads_R2.fastq.gz \
+  --mp1-1 /ftmp/mp_reads_R1.fastq.gz --mp1-2 /ftmp/mp_reads_R2.fastq.gz \
+  -o /ftmp/output_directory
 ```
 
 - `--pe1-1/--pe1-2`: Paired-end library
@@ -71,7 +71,7 @@ docker run --network=none -v $(pwd):/ftmp dnalinux/spades spades.py \
 For single-cell sequencing data with MDA bias correction:
 
 ```bash
-docker run --network=none -v $(pwd):/ftmp dnalinux/spades spades.py --sc -1 sc_reads_R1.fastq.gz -2 sc_reads_R2.fastq.gz -o sc_output
+docker run --network=none -v $(pwd):/ftmp dnalinux/spades spades.py --sc -1 /ftmp/sc_reads_R1.fastq.gz -2 /ftmp/sc_reads_R2.fastq.gz -o /ftmp/sc_output
 ```
 
 - `--sc`: Activates single-cell mode (SC-SPAdes)
@@ -82,18 +82,18 @@ Combining Illumina short reads with PacBio or Nanopore long reads:
 
 ```bash
 docker run --network=none -v $(pwd):/ftmp dnalinux/spades spades.py \
-  -1 illumina_R1.fastq.gz -2 illumina_R2.fastq.gz \
-  --pacbio pacbio_reads.fastq.gz \
-  -o hybrid_output
+  -1 /ftmp/illumina_R1.fastq.gz -2 /ftmp/illumina_R2.fastq.gz \
+  --pacbio /ftmp/pacbio_reads.fastq.gz \
+  -o /ftmp/hybrid_output
 ```
 
 Or with Nanopore:
 
 ```bash
 docker run --network=none -v $(pwd):/ftmp dnalinux/spades spades.py \
-  -1 illumina_R1.fastq.gz -2 illumina_R2.fastq.gz \
-  --nanopore nanopore_reads.fastq.gz \
-  -o hybrid_output
+  -1 /ftmp/illumina_R1.fastq.gz -2 /ftmp/illumina_R2.fastq.gz \
+  --nanopore /ftmp/nanopore_reads.fastq.gz \
+  -o /ftmp/hybrid_output
 ```
 
 - `--pacbio`: PacBio CLR reads
@@ -114,8 +114,8 @@ You can add these to any command:
 
 ```bash
 docker run --network=none -v $(pwd):/ftmp dnalinux/spades spades.py \
-  -1 reads_R1.fastq.gz -2 reads_R2.fastq.gz \
-  -o output_directory \
+  -1 /ftmp/reads_R1.fastq.gz -2 /ftmp/reads_R2.fastq.gz \
+  -o /ftmp/output_directory \
   -t 16 \
   -m 64 \
   --careful

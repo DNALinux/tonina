@@ -1,6 +1,6 @@
 ---
-name: SRA-TOOLKIT
-description: "Uses sra-toolkit docker to download sequences from the SRA (Sequence Read Archive) database."
+name: SRAToolkit
+description: "Download and convert NCBI SRA accessions to FASTQ/FASTA using fasterq-dump."
 metadata:
   openclaw:
     emoji: "🧬"
@@ -14,50 +14,105 @@ metadata:
         label: "Install Docker"
 ---
 
-# SRA TOOLKIT Skill
+# SRA Toolkit Skill
 
-The SRA Toolkit is a set of programs for working with data in the SRA (Sequence Read Archive) database. It provides tools for downloading, uploading, and managing sequence data.
+The SRA Toolkit is a set of NCBI programs for downloading, validating and converting data from the SRA (Sequence Read Archive) database. This skill focuses on the consumer-side workflow: turning an SRA accession into FASTQ/FASTA files with `fasterq-dump`.
+
+This skill uses the `dnalinux/sra-toolkit:latest` docker image (current upstream release of the SRA Toolkit). Run `docker run --rm dnalinux/sra-toolkit:latest fasterq-dump --version` to print the exact version in your local image.
+
+> **Note:** Unlike most other skills in this collection, the container requires network access (it talks to NCBI, AWS and GCP). Do **not** pass `--network=none`.
 
 ## When to use it
 
 Use the SRA Toolkit to:
 
-* Download sequence data from the SRA database
-* Upload sequence data to the SRA database
-* Manage sequence data in the SRA database
+- Download sequence data for a given SRA accession (`SRR...`, `ERR...`, `DRR...`).
+- Convert local `.sra` files to FASTQ or FASTA.
+- Inspect and validate SRA archives (`sra-stat`, `vdb-validate`).
 
+Submission of new data to SRA is **not** done with these tools - it is handled by NCBI's submission portal and is out of scope here.
 
-## SRA TOOLKIT Usage
+## SRA Toolkit Usage
 
-Note that there is a docker (dnalinux/sra-toolkit) that provides the sra-toolkit commands.
+The docker command mounts your current directory to `/ftmp` inside the container. All paths in the examples below are relative to `/ftmp/`, which maps to wherever you run the command from.
 
-The docker command mounts your current directory to `/ftmp` inside the container. All file paths in the examples below are relative to `/ftmp/`, which maps to wherever you run the command from.
+`fasterq-dump` is the successor to the older `fastq-dump`. It is significantly faster but **not** a drop-in replacement: options and defaults differ. The only mandatory argument is the accession (or path to a local `.sra` file).
 
-The fasterq-dump tool extracts data in FASTQ- or FASTA-format from SRA-accessions. Fasterq-dump is the successor to the older fastq-dump tool, but faster. However: it is not a drop-in replacement, options and defaults are different.
+### First-run configuration tip
 
-The tool has one mandatory argument: the accession.
-
-To download a sequence from the SRA database, if the accession number is SRR15536067:
-
+The first invocation of any SRA tool can prompt about cloud usage / telemetry and stall in non-interactive contexts. To avoid that in scripts, initialize a default config inside the container (one-time):
 
 ```bash
-docker run --rm -v $(pwd):/ftmp dnalinux/sra-toolkit:3.4.1-bin fasterq-dump SRR15536067 --outdir /ftmp
+docker run --rm -v $(pwd):/ftmp dnalinux/sra-toolkit:latest vdb-config --restore-defaults
 ```
 
-Note that the location (output directory) of the output-files can be changed with --outdir
+### Recommended workflow: prefetch then fasterq-dump
 
-If parts of the output-path do not exist, it will be created. If the output-files already exist, the tool will not overwrite them, but fail instead. If you want already existing output-files to be overwritten, use the force option -f.
-
-The location of the temporary directory can be changed too:
-
+For large accessions or unreliable networks, NCBI recommends downloading the `.sra` archive first with `prefetch`, then converting locally:
 
 ```bash
-docker run --rm -v $(pwd):/ftmp dnalinux/sra-toolkit:3.4.1-bin fasterq-dump SRR15536067 --outdir /ftmp -t /tmp/scratch
+docker run --rm -v $(pwd):/ftmp dnalinux/sra-toolkit:latest prefetch SRR15536067 -O /ftmp
+docker run --rm -v $(pwd):/ftmp dnalinux/sra-toolkit:latest fasterq-dump /ftmp/SRR15536067 --outdir /ftmp
 ```
 
-Now the temporary files will be created in the '/tmp/scratch' directory. These temporary files will be deleted on finish, but the directory itself will not be deleted. If the temporary directory does not exist, it will be created.
+### One-shot download with fasterq-dump
 
-It is helpful for the speed-up, if the output-path and the scratch-path are on different file-systems. For instance it is a good idea to point the temporary directory to a SSD if available or a RAM-disk like /dev/shm if enough RAM is available.
+For a small/fast accession you can skip `prefetch` - `fasterq-dump` will fetch and convert in one step:
+
+```bash
+docker run --rm -v $(pwd):/ftmp dnalinux/sra-toolkit:latest fasterq-dump SRR15536067 --outdir /ftmp
+```
+
+### Expected output files
+
+The default mode is `--split-3`, which yields different files depending on the experiment layout:
+
+- **Paired-end** accession - produces `<acc>_1.fastq` and `<acc>_2.fastq` (plus `<acc>.fastq` for any orphan/unpaired reads).
+- **Single-end** accession - produces a single `<acc>.fastq`.
+
+If the output files already exist, the tool exits with an error. Pass `-f/--force` to overwrite.
+
+### Choosing a temp directory
+
+`fasterq-dump` needs scratch space roughly **10x** the size of the final FASTQ. By default it uses the current working directory. Override with `-t/--temp` and point it at a host-mounted path so it lands on a fast disk (and is not lost to the container):
+
+```bash
+docker run --rm -v $(pwd):/ftmp dnalinux/sra-toolkit:latest \
+  fasterq-dump SRR15536067 --outdir /ftmp -t /ftmp/scratch
+```
+
+For maximum speed, mount a separate SSD or a `tmpfs` (`/dev/shm` on the host) as a second volume and point `-t` at it. Output-path and scratch-path on different filesystems noticeably improves throughput.
+
+### Compressed output
+
+`fasterq-dump` writes **uncompressed** FASTQ. To get gzipped output, pipe through `gzip`/`pigz` after the run, e.g.:
+
+```bash
+gzip -f SRR15536067_1.fastq SRR15536067_2.fastq SRR15536067.fastq
+```
+
+Alternatively use the older `fastq-dump --gzip SRR15536067` if you prefer compression-during-extraction at the cost of speed.
+
+### Stream to stdout
+
+Use `-Z/--stdout` to pipe FASTQ directly into a downstream tool without an intermediate file:
+
+```bash
+docker run --rm -v $(pwd):/ftmp dnalinux/sra-toolkit:latest \
+  fasterq-dump -Z SRR15536067 | head
+```
+
+### Companion tools in the image
+
+| Tool | Purpose |
+|------|---------|
+| `prefetch` | Download an SRA archive (`.sra`) by accession. Recommended first step. |
+| `fasterq-dump` | Convert `.sra` (or accession) to FASTQ/FASTA. |
+| `fastq-dump` | Older converter; supports `--gzip` and `--bzip2` natively. |
+| `vdb-validate` | Check integrity of a downloaded `.sra` archive. |
+| `sra-stat` | Print statistics (spot count, base count, etc.) for an accession. |
+| `sam-dump` | Convert aligned SRA data to SAM. |
+| `vdb-config` | Read/write toolkit configuration (cloud, telemetry, cache dir). |
 
 
 ## fasterq-dump modes
@@ -89,7 +144,7 @@ It is helpful for the speed-up, if the output-path and the scratch-path are on d
 
 
 
-# Options
+## Options (fasterq-dump)
 
 
 
@@ -142,8 +197,10 @@ It is helpful for the speed-up, if the output-path and the scratch-path are on d
 | `-q` | `--quiet` | Suppress all status messages (negated by verbose) |
 | | `--option-file <file>` | Read options from file |
 
-# To cite
+## Citation
 
-If the user asks for a citation, provide the following:
+If the user asks for a citation, provide the SRA-specific reference:
 
-David L. Wheeler, Tanya Barrett, Dennis A. Benson, Stephen H. Bryant, Kathi Canese, Vyacheslav Chetvernin, Deanna M. Church, Michael DiCuccio, Ron Edgar, Scott Federhen, Lewis Y. Geer, Wolfgang Helmberg, Yuri Kapustin, David L. Kenton, Oleg Khovayko, David J. Lipman, Thomas L. Madden, Donna R. Maglott, James Ostell, Kim D. Pruitt, Gregory D. Schuler, Lynn M. Schriml, Edwin Sequeira, Stephen T. Sherry, Karl Sirotkin, Alexandre Souvorov, Grigory Starchenko, Tugba O. Suzek, Roman Tatusov, Tatiana A. Tatusova, Lukas Wagner, Eugene Yaschenko, Database resources of the National Center for Biotechnology Information, Nucleic Acids Research, Volume 34, Issue suppl_1, 1 January 2006, Pages D173–D180, https://doi.org/10.1093/nar/gkj158
+Leinonen R, Sugawara H, Shumway M; International Nucleotide Sequence Database Collaboration. The Sequence Read Archive. Nucleic Acids Research. 2011 Jan;39(Database issue):D19-D21. doi:10.1093/nar/gkq1019.
+
+For the SRA Toolkit itself, also point users to the NCBI repository: https://github.com/ncbi/sra-tools

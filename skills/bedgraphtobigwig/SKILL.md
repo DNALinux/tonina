@@ -40,32 +40,34 @@ This approach is *not* suitable for:
 
 ### Step 1: Sort the bedGraph File
 
+- Skip this step if bedgraph file is already sorted.
+
 The bedGraphToBigWig utility strictly requires the input bedGraph file to be sorted. You can easily sort it using standard Linux commands:
 
 ```bash
 docker run --rm -v $(pwd):/data -w /data dnalinux/bedGraphToBigWig:2.10 sh -c \ "LC_COLLATE=C sort -k1,1 -k2,2n input.bedGraph > sorted.bedGraph"
 ```
 
-- Skip this step if bedgraph file is already sorted.
-
 ### Step 2: Prepare the Chromosome Sizes File
+- Skip this step if chrom.sizes file is already made 
 
 The tool needs to know the exact boundary limits of each chromosome. If you do not have a chrom.sizes file, you can generate one using one of the options below:
 
 # Option A: Generate from a reference FASTA index (.fai)
-If you have your reference genome indexed with samtools faidx
+If you have your reference genome indexed with samtools faidx,
 
 ```bash
 docker run --rm -v $(pwd):/data -w /data dnalinux/bedGraphToBigWig:2.10 sh -c \ "cut -f1,2 reference.fa.fai > chrom.sizes"
 ```
 
-# Option B: Option B: Download from UCSC (e.g., for Human hg38)
+# Option B: Download from UCSC (e.g., for Human hg38)
+If you are using a standard reference genome like Human hg38
 
 ```bash
 docker run --rm -v $(pwd):/data -w /data dnalinux/bedGraphToBigWig:2.10 sh -c \ "wget -qO- http://hgdownload.cse.ucsc.edu/goldenpath/hg38/bigZips/hg38.chrom.sizes > chrom.sizes"
 ```
 
-### Step 3: Step 3: Run the bedGraphToBigWig Conversion
+### Step 3: Run the bedGraphToBigWig Conversion
 
 Execute the Docker container to perform the conversion:
 

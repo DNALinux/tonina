@@ -61,7 +61,7 @@ docker run --rm -v $(pwd):/data -w /data dnalinux/bedGraphToBigWig:2.10 sh -c \ 
 ```
 
 # Option B: Download from UCSC (e.g., for Human hg38)
-If you are using a standard reference genome like Human hg38
+If you are using a standard reference genome like Human hg38,
 
 ```bash
 docker run --rm -v $(pwd):/data -w /data dnalinux/bedGraphToBigWig:2.10 sh -c \ "wget -qO- http://hgdownload.cse.ucsc.edu/goldenpath/hg38/bigZips/hg38.chrom.sizes > chrom.sizes"

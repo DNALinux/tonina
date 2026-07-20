@@ -92,8 +92,8 @@ docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/muscle:5.1.0-1 \
 
 Each run of `muscle` produces two files:
 
-- `alignment.fasta/afa` — aligned FASTA file (`.fasta` if PP5, `.afa` if super5)
-- `ensemble.efa` — ensembel FASTA file
+- `alignment.fasta/afa` — aligned FASTA file (`.fasta` if PPP, `.afa` if super5)
+- `ensemble.efa` — ensemble FASTA file
 
 ## Additional Useful Parameters
 **Prerequisite: These paramters can only be added to commands that use Option 1B (-super5).**

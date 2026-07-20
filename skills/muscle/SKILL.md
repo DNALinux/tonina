@@ -23,7 +23,6 @@ This skill generates high-quality Multiple Sequence Alignments (MSAs) of protein
 Use this workflow when you have:
 - Three or more unaligned homologous sequences in a single file
 - A need to identify conserved sequence regions, which can establish evolutionary relationships and reveal structural and functional domains
-- A need for progressive alignment and for aligned sequences, external profile alignment
 
 This approach is **not** suitable for:
 - Only two or less unaligned homologous sequences in a single file

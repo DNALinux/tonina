@@ -1,4 +1,3 @@
-
 ---
 name: CLUSTAL-OMEGA
 description: "CLUSTAL-OMEGA is a general purpose multiple sequence alignment program

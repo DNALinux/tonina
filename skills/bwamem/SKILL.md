@@ -45,9 +45,9 @@ This approach is **not** suitable for:
 The FASTA must be indexed using bwa. If your files are not yet indexed:
 
 ```bash
-docker run --rm -v /mnt/disks/bucket:/mnt/disks/bucket:rw \
--w /mnt/disks/bucket \
-dnalinux/bwa bwa index reference.fasta
+docker run --rm -v $(pwd):/ftmp \
+-w /ftmp \
+dnalinux/bwa index /ftmp/reference.fasta
 ```
 
 - Produces 5 files in these formats: `.bwt`, `.sa`,  `.pac`,  `.ann`,  `.amb` 
@@ -58,11 +58,11 @@ dnalinux/bwa bwa index reference.fasta
 The main function bwa mem to map by alignment is now run.
 
 ```bash
-docker run --rm -v /mnt/disks/bucket:/mnt/disks/bucket:rw \
--w /mnt/disks/bucket \
+docker run --rm -v $(pwd):/ftmp \
+-w /ftmp \
 --entrypoint /bin/sh \
 dnalinux/bwa \
--c 'bwa mem reference.fasta reads_R1.fastq.gz reads_R2.fastq.gz > aligned_reads.sam'
+-c 'bwa mem -t $(nproc) /ftmp/reference.fasta /ftmp/reads_R1.fastq.gz /ftmp/reads_R2.fastq.gz > /ftmp/aligned_reads.sam'
 ```
 
 ## Output

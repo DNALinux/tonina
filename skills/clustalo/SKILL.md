@@ -1,7 +1,6 @@
 ---
 name: CLUSTAL-OMEGA
-description: "CLUSTAL-OMEGA is a general purpose multiple sequence alignment program
-for protein and DNA/RNA."
+description: "CLUSTAL-OMEGA is a general purpose multiple sequence alignment program for protein and DNA/RNA."
 metadata:
   openclaw:
     emoji: "🧬"

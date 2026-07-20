@@ -57,7 +57,7 @@ docker run --rm -v \$(pwd):/ftmp -w /ftmp dnalinux/clustalo:1.2.4 \
 
 Each run of `clustalo` produces one file:
 
-- `aligned_output.fa` — aligned sequences fasta file.
+- `aligned_output.fa` — aligned sequences FASTA file.
 
 ---
 

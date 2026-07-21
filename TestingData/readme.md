@@ -1,6 +1,6 @@
 # Testing Data for the Tonina Project
 
-**Deinococcus radiodurans**
+## Deinococcus radiodurans
 
 **Reference Genome:**
 GCA_011604825.1.fasta

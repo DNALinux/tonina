@@ -14,7 +14,7 @@ metadata:
         label: "Install Docker"
 ---
 
-# VCF Consensus Assembly Skill
+# MUSCLE Multiple Sequence Alignemnt Skill
 
 This skill generates high-quality Multiple Sequence Alignments (MSAs) of proteins, DNA, or RNA by executing MUSCLE. 
 
@@ -60,7 +60,6 @@ docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/muscle:5.1.0-1 \
   -super5 /ftmp/sequences.fasta -output /ftmp/alignment.afa -threads=$(nproc)
 ```
 
-- `-align`: Uses the standard PPP/Ensemble algorithm.
 - `-super5`: Uses the Super5 algorithm.
 - `-output`: Path to saving the resulting aligned FASTA file (.fasta).
 - `-threads`: Number of threads. Default is the number of CPU cores, or 20 if the CPU has more than 20 cores. 
@@ -90,10 +89,14 @@ docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/muscle:5.1.0-1 \
 
 ## Output
 
-Each run of `muscle` produces two files:
+Each run of `muscle` produces at least one file:
 
 - `alignment.fasta/afa` — aligned FASTA file (`.fasta` if PPP, `.afa` if super5)
+
+- If Step 2A is run, an ensemble FASTA file is produced.
 - `ensemble.efa` — ensemble FASTA file
+
+- If Step 2B is run, dispersion metrics to stdout (presumably). 
 
 ## Additional Useful Parameters
 **Prerequisite: These paramters can only be added to commands that use Option 1B (-super5).**
@@ -106,7 +109,7 @@ These can be added to the `muscle` command if `-super5` is used:
 
 ```bash
 docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/muscle:5.1.0-1 \
-  -super5 /ftmp/sequences.fasta -output /ftmp/replicate.@.afa -threads=$(nproc)
+  -super5 /ftmp/sequences.fasta -output /ftmp/replicate.@.afa -threads=$(nproc) \
   -perturb 3 -perm all
 ```
 - You can generate all guide tree permutations for a single HMM perturbation by using -perm all , this creates four alignments, one for each variant of the guide tree. If -perm all is set, and the output filename contains @ , then alignments are written to four different FASTA files where @ is replaced by is replaced by the replicate name, e.g. abc.3

@@ -56,11 +56,12 @@ c. **Determine optional flags based on user request:**
 d. **Substitute all extracted variables and run the Docker command:**
 
 ```bash
-docker run --rm -v "$(pwd):/ftmp" -w /ftmp dnalinux/clustalo:abcd \
-  -i "/ftmp/<INPUT_FILE>" \
-  -o "/ftmp/<OUTPUT_FILE>" \
-  --threads=$(nproc) \
-  --force 
+docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/clustalo:1.2.4-8 \
+clustalo \
+-i <INPUT_FILE> \
+-o <OUTPUT_FILE> \
+--threads=$(nproc) \
+--force 
 ```
 
 - `-i`: Path to the input file containing unaligned sequences.
@@ -93,18 +94,18 @@ These can be added to the `clustalo` command:
 **Example with (`--infmt`), (`--outfmt`), (`--iter`), (`--guidetree-out`), and(`--distmat-out`) :**
 
 ```bash
-docker run --rm -v "$(pwd):/ftmp" -w /ftmp dnalinux/clustalo:abcd \
-  -i "/ftmp/unaligned_seqs.phy" \
-  -o "/ftmp/alignment.phy" \
+docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/clustalo:1.2.4-8 \
+  clustalo \
+  -i unaligned_seqs.phy \
+  -o alignment.phy \
   --threads=$(nproc) \
   --force \
   --infmt=phylip \
   --outfmt=phylip \
   --iter=2 \
-  --guidetree-out="/ftmp/guide_tree.nwk" \
-  --distmat-out="/ftmp/distance_matrix.csv"
+  --guidetree-out=guide_tree.nwk \
+  --distmat-out=distance_matrix.csv
   ```
-
   ---
 
 ## Citation

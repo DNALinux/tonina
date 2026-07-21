@@ -24,6 +24,7 @@ Use this workflow when you have:
 
 - A reference genome (FASTA) and raw or trimmed paired-end sequencing reads (FASTQ)
 - A need to map individual sequence reads to a reference backbone without performing de novo assembly
+- For a human-sized reference genome (~3 Gb), BWA-MEM requires ~5–6 GB of RAM to hold the index. Ensure your machine has sufficient free memory before running.
 
 This approach is **not** suitable for:
 - Samples highly divergent from the reference (use de novo assembly instead, e.g., SPAdes)
@@ -32,7 +33,7 @@ This approach is **not** suitable for:
 
 ## Input Types
 
-- **Reference genome** — Uncompressed FASTA (`.fasta` or `.fa`). If your reference is gzip-compressed (`.fasta.gz` or `.fa.gz`), decompress it first with `gunzip reference.fa.gz`.
+- **Reference genome** — Uncompressed or compressed FASTA (`.fasta` or `.fa` or `.fastq.gz` or `.fq.gz`). 
 - **Forward reads**— Gzip-compressed paired-end sequence reads (`.fastq.gz` or `.fq.gz`).
 - **Reverse reads** — Gzip-compressed paired-end sequence reads (`.fastq.gz` or `.fq.gz`).
 
@@ -60,16 +61,20 @@ The main function bwa mem to map by alignment is now run.
 ```bash
 docker run --rm -v $(pwd):/ftmp \
 -w /ftmp \
---entrypoint /bin/sh \
 dnalinux/bwa \
--c 'bwa mem -t $(nproc) /ftmp/reference.fasta /ftmp/reads_R1.fastq.gz /ftmp/reads_R2.fastq.gz > /ftmp/aligned_reads.sam'
+mem -t $(nproc) reference.fasta reads_R1.fastq.gz reads_R2.fastq.gz > aligned_reads.sam'
 ```
+docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/bwa mem -t $(nproc) reference.gz reads_R1.fastq.gz reads_R2.fastq.gz > aligned_reads.sam
 
 ## Output
 
 Each run of `bwa mem` produces one file:
 
 - `aligned_reads.sam` — The mapping results.
+
+## Note
+
+Next step: aligned_reads.sam is typically converted to a sorted, compressed BAM file using samtools for downstream analysis.
 
 ---
 

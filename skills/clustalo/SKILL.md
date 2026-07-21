@@ -42,22 +42,38 @@ This approach is **not** suitable for:
 
 For unaligned sequences, the sequences will be aligned. For aligned sequences, the alignment will be turned into a HMM, the sequences will be de-aligned, and the now un-aligned sequences are aligned using the HMM as an External Profile for External Profile Alignment (EPA).
 
+## Steps
+a. **Extract variables from the user prompt:**
+   - `<INPUT_FILE>`: The input filename or path provided by the user.
+   - `<OUTPUT_FILE>`: Output filename. Defaults to `aligned_output.fa` unless specified by the user.
+
+b. **Validate arguments and fill missing inputs:**
+   - If `<INPUT_FILE>` is missing from the user request, prompt the user for it.
+
+c. **Determine optional flags based on user request:**
+   - Append any requested optional parameters (e.g., `--infmt`, `--outfmt`, `--iter`, `--guidetree-out`, `--distmat-out`, `--dealign`, `--seqtype`) from **Additional Useful Parameters**.
+
+d. **Substitute all extracted variables and run the Docker command:**
+
 ```bash
-docker run --rm -v \$(pwd):/ftmp -w /ftmp dnalinux/clustalo:1.2.4 \
-  -i /ftmp/input_sequences.fa \
-  -o /ftmp/aligned_output.fa \
-  --threads=$(nproc)
+docker run --rm -v "$(pwd):/ftmp" -w /ftmp dnalinux/clustalo:abcd \
+  -i "/ftmp/<INPUT_FILE>" \
+  -o "/ftmp/<OUTPUT_FILE>" \
+  --threads=$(nproc) \
+  --force 
 ```
 
 - `-i`: Path to the input file containing unaligned sequences.
 - `-o`: Path to the generated output file.
 - `--threads`: Number of processors to use.
+- `--force`: Forces file overwriting if file exists.
 
 ## Output
 
-Each run of `clustalo` produces one file:
+Each run of `clustalo` produces at least one file:
 
 - `aligned_output.fa` — aligned sequences FASTA file.
+- (Optional) Additional files if requested (e.g., guide tree or distance matrix).
 
 ---
 
@@ -67,8 +83,29 @@ These can be added to the `clustalo` command:
 
 - `--dealign`: If the input sequences file is aligned and no EPA is desired, use this flag.
 - `-t` or `--seqtype`: To specify the sequence type instead of having Clustal-Omega guess the sequence type {Protein, RNA, DNA} 
+- `--infmt`: MSA input file format
+- `--outfmt`: MSA output file format
+- `--iter`: Number of guide-tree/HMM iterations for alignment refinement.
+- `--guidetree-out`: Output filename to save the generated guide tree.
+- `--distmat-out`: Output filename to save the calculated pairwise distance matrix.
 
----
+
+**Example with (`--infmt`), (`--outfmt`), (`--iter`), (`--guidetree-out`), and(`--distmat-out`) :**
+
+```bash
+docker run --rm -v "$(pwd):/ftmp" -w /ftmp dnalinux/clustalo:abcd \
+  -i "/ftmp/unaligned_seqs.phy" \
+  -o "/ftmp/alignment.phy" \
+  --threads=$(nproc) \
+  --force \
+  --infmt=phylip \
+  --outfmt=phylip \
+  --iter=2 \
+  --guidetree-out="/ftmp/guide_tree.nwk" \
+  --distmat-out="/ftmp/distance_matrix.csv"
+  ```
+
+  ---
 
 ## Citation
 

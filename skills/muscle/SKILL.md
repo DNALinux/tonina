@@ -45,8 +45,10 @@ Determine which algorithm to use based on the input size:
 *Use for default or small-to-medium sequence sets (<1,000 sequences) where maximum precision is required.*
 
 ```bash
-docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/muscle:5.1.0-1 \
-  -align /ftmp/sequences.fasta -output /ftmp/alignment.fasta
+docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/muscle \ 
+  muscle \
+  -align sequences.fasta \
+  -output alignment.fasta
 ```
 
 - `-align`: Uses the standard PPP/Ensemble algorithm.
@@ -56,13 +58,16 @@ docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/muscle:5.1.0-1 \
 *Use for large sequence sets (>1,000 sequences) where `-align` becomes too slow or consumes excess memory.*
 
 ```bash
-docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/muscle:5.1.0-1 \
-  -super5 /ftmp/sequences.fasta -output /ftmp/alignment.afa -threads=$(nproc)
+docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/muscle \
+  muscle \
+  -super5 sequences.fasta \
+  -output alignment.afa \
+  -threads $(nproc)
 ```
 
 - `-super5`: Uses the Super5 algorithm.
 - `-output`: Path to saving the resulting aligned FASTA file (.fasta).
-- `-threads`: Number of threads. Default is the number of CPU cores, or 20 if the CPU has more than 20 cores. 
+- `-threads`: Number of threads. Default is the number of CPU cores, or 20 if the CPU has more than 20 cores. Note: No assignment operator (=) is necessary in this case.
 
 ### Step 2: Checking Alignment Quality & Errors
 **Prerequisite: This step requires the standard PPP algorithm (-align) used in Option 1A. It cannot be run on alignments created via Option 1B (-super5).**
@@ -72,15 +77,19 @@ To verify whether an alignment is robust or contains errors, construct a stratif
 ### Step 2A: Generate Stratified Ensemble (.efa)
 
 ```bash
-docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/muscle:5.1.0-1 \
-  -align /ftmp/sequences.fasta -stratified -output /ftmp/ensemble.efa
+docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/muscle \
+  muscle \
+  -align sequences.fasta \
+  -stratified \
+  -output ensemble.efa
 ```
 
 ### Step 2B: Measure Ensemble Dispersion
 
 ```bash
-docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/muscle:5.1.0-1 \
-  -disperse /ftmp/ensemble.efa 
+docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/muscle \
+  muscle \
+  -disperse ensemble.efa 
 ```
 
 #### Interpreting Dispersion Results:
@@ -108,9 +117,13 @@ These can be added to the `muscle` command if `-super5` is used:
 **Example with (`-perturb`) and (`-perm`):**
 
 ```bash
-docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/muscle:5.1.0-1 \
-  -super5 /ftmp/sequences.fasta -output /ftmp/replicate.@.afa -threads=$(nproc) \
-  -perturb 3 -perm all
+docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/muscle \
+  muscle \
+  -super5 sequences.fasta \
+  -output replicate.@.afa \
+  -threads $(nproc) \
+  -perturb 3 \
+  -perm all
 ```
 - You can generate all guide tree permutations for a single HMM perturbation by using -perm all , this creates four alignments, one for each variant of the guide tree. If -perm all is set, and the output filename contains @ , then alignments are written to four different FASTA files where @ is replaced by is replaced by the replicate name, e.g. abc.3
 

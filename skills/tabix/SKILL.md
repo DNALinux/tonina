@@ -26,23 +26,21 @@ Use this workflow when you have:
 - A need to quickly retrieve data lines overlapping regions
 
 This approach is **not** suitable for:
-- - An input data file that is NOT position sorted or NOT compressed by bgzip which has a gzip(1) like interface
+- An input data file that is NOT position sorted or NOT compressed by bgzip which has a gzip(1) like interface
 
 ## Input Types
 
-- **Sorted and Compressed TAB-delimited genome position file** — e.g. (`.gz`)
+- **Sorted and Compressed TAB-delimited genome position file** — e.g. (`bgzipped.gz`) or (`.bgz`)
 ---
 
 ## Workflow
-
-### Step 1: Run Indexing
-
-This skill indexes a TAB-delimited genome position file in.tab.bgz and creates an index file (in.tab.bgz.tbi or in.tab.bgz.csi) when region is absent from the command-line. After indexing, tabix is able to quickly retrieve data lines overlapping regions specified in the format "chr:beginPos-endPos". (Coordinates specified in this region format are 1-based and inclusive.)
 
 ## Steps
 a. **Extract variables from the user prompt:**
   - `<INPUT_FILE>`: The input filename or path provided by the user.
   - `<REGIONS>`: One or more space-separated genomic regions provided by the user (e.g., `chr1:10,000,000-20,000,000`, `1:500-1200`, `chrX`).
+  - **WARNING: Important: If your file is not a standard VCF, BED, GFF, or SAM file — or if it has extra columns before the position columns, you must specify -p and optionally -s, -b, -e (sequence name, start, end column numbers). Without this, tabix may create a broken index while exiting with code 0.**
+
 
 b. **Validate arguments and fill missing inputs:**
   - If `<INPUT_FILE>` is missing from the user request, prompt the user for it.
@@ -56,6 +54,10 @@ c. **Normalize Regions format:**
 
 d. **Determine optional flags based on user request:**
    - Append any requested optional parameters (e.g., `--csi`, `--preset`, `-h` for headers) from **Additional Useful Parameters**.
+
+### Step 1: Run Indexing
+
+This skill indexes a TAB-delimited genome position file in.tab.bgz and creates an index file (in.tab.bgz.tbi or in.tab.bgz.csi) when region is absent from the command-line. After indexing, tabix is able to quickly retrieve data lines overlapping regions specified in the format "chr:beginPos-endPos". (Coordinates specified in this region format are 1-based and inclusive.)
 
 ```bash
 docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/tabix \
@@ -80,9 +82,10 @@ tabix \
 
 ## Output
 
-Each run of `tabix` produces one file:
+Each run of `tabix` produces one file from Step 1 (Indexing):
 
 - `<INPUT_FILE>.tbi` or `<INPUT_FILE>.csi` — index file
+- Step 2 (Querying) will output the matching genomic regions to stdout
 
 ---
 

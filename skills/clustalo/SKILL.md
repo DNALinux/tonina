@@ -56,7 +56,7 @@ c. **Determine optional flags based on user request:**
 d. **Substitute all extracted variables and run the Docker command:**
 
 ```bash
-docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/clustalo:1.2.4-8 \
+docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/clustalo \
 clustalo \
 -i <INPUT_FILE> \
 -o <OUTPUT_FILE> \
@@ -94,7 +94,7 @@ These can be added to the `clustalo` command:
 **Example with (`--infmt`), (`--outfmt`), (`--iter`), (`--guidetree-out`), and(`--distmat-out`) :**
 
 ```bash
-docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/clustalo:1.2.4-8 \
+docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/clustalo \
   clustalo \
   -i unaligned_seqs.phy \
   -o alignment.phy \
@@ -113,5 +113,3 @@ docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/clustalo:1.2.4-8 \
 If the user asks for a citation for clustalo, provide the following:
 
 Fast, scalable generation of high-quality protein multiple sequence alignments using Clustal Omega Sievers F, Wilm A, Dineen DG, Gibson TJ, Karplus K, Li W, Lopez R, McWilliam H, Remmert M, Söding J, Thompson JD, Higgins D Molecular Systems Biology 7 Article number: 539 doi:10.1038/msb.2011.75
-
-A new bioinformatics analysis tools framework at EMBL-EBI (2010) Goujon M, McWilliam H, Li W, Valentin F, Squizzato S, Paern J, Lopez R Nucleic acids research 2010 Jul, 38 Suppl: W695-9 doi:10.1093/nar/gkq313 

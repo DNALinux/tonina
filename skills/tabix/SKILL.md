@@ -16,31 +16,37 @@ metadata:
 
 # Tabix – Generic Indexer For TAB-delimited Genome Position Files
 
-This skill generates an index file.
+This skill indexes bgzipped TAB-delimited genome position files and queries them by genomic region.
 
 ## When This Skill Is Used
 
 Use this workflow when you have:
-- An input data file that is position sorted and compressed by bgzip which has a gzip(1) like interface
-- A need to index
+- An input data file that is **position sorted** and **compressed with bgzip**
+- A need to create an index for fast region lookup
 - A need to quickly retrieve data lines overlapping regions
 
 This approach is **not** suitable for:
-- An input data file that is NOT position sorted or NOT compressed by bgzip which has a gzip(1) like interface
+- Files that are NOT position sorted
+- Files that are NOT compressed with bgzip
+
+## Prerequisites
+
+- The input file must already be **bgzipped** (`.bgz` or `.gz`). Use `bgzip file.bed` first if needed.
 
 ## Input Types
 
-- **Sorted and Compressed TAB-delimited genome position file** — e.g. (`bgzipped.gz`) or (`.bgz`)
+- **Sorted and bgzipped TAB-delimited genome position file** — e.g. `file.bed.gz`, `file.vcf.gz`, `file.gff.gz`
+
 ---
 
 ## Workflow
 
-## Steps
+### Steps
+
 a. **Extract variables from the user prompt:**
   - `<INPUT_FILE>`: The input filename or path provided by the user.
   - `<REGIONS>`: One or more space-separated genomic regions provided by the user (e.g., `chr1:10,000,000-20,000,000`, `1:500-1200`, `chrX`).
   - **WARNING: Important: If your file is not a standard VCF, BED, GFF, or SAM file — or if it has extra columns before the position columns, you must specify -p and optionally -s, -b, -e (sequence name, start, end column numbers). Without this, tabix may create a broken index while exiting with code 0.**
-
 
 b. **Validate arguments and fill missing inputs:**
   - If `<INPUT_FILE>` is missing from the user request, prompt the user for it.
@@ -57,18 +63,18 @@ d. **Determine optional flags based on user request:**
 
 ### Step 1: Run Indexing
 
-This skill indexes a TAB-delimited genome position file in.tab.bgz and creates an index file (in.tab.bgz.tbi or in.tab.bgz.csi) when region is absent from the command-line. After indexing, tabix is able to quickly retrieve data lines overlapping regions specified in the format "chr:beginPos-endPos". (Coordinates specified in this region format are 1-based and inclusive.)
+This step creates an index file (`<INPUT_FILE>.tbi` or `<INPUT_FILE>.csi`). After indexing, tabix can quickly retrieve data lines overlapping regions specified in the format `chr:beginPos-endPos`. (Coordinates are 1-based and inclusive.)
 
 ```bash
 docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/tabix \
 tabix \
-<INPUT_FILE> \
 --force \
---threads $(nproc)
+--threads $(nproc) \
+<INPUT_FILE>
 ```
 
-- `--force`: Forces file overwriting if file exists.
-- `--threads`: Set number of threads to use for the operation. The default is 0, where no extra threads are in use.
+- `--force`: Forces file overwriting if the index already exists.
+- `--threads`: Set number of threads to use for the operation. The default is 0, where no extra threads are used.
 
 ### Step 2: Querying with index file
 
@@ -76,16 +82,13 @@ tabix \
 docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/tabix \
 tabix \
 <INPUT_FILE> \
-<REGIONS> \
---threads $(nproc)
+<REGIONS>
 ```
 
 ## Output
 
-Each run of `tabix` produces one file from Step 1 (Indexing):
-
-- `<INPUT_FILE>.tbi` or `<INPUT_FILE>.csi` — index file
-- Step 2 (Querying) will output the matching genomic regions to stdout
+- **Step 1 (Indexing):** Produces `<INPUT_FILE>.tbi` or `<INPUT_FILE>.csi`
+- **Step 2 (Querying):** Prints matching genomic regions to stdout
 
 ---
 
@@ -93,13 +96,13 @@ Each run of `tabix` produces one file from Step 1 (Indexing):
 
 These can be added to the `tabix` command:
 
-For indexing:
-- `--csi`: If the input file might contain data lines with begin or end positions greater than 512 Mbp (2^29 bases) in length, a CSI index will be used
-- `--preset`: Input format for indexing. Valid values are: gff, bed, sam, vcf
+**For indexing:**
+- `--csi`: Use CSI index instead of TBI. Required if positions may exceed 512 Mbp (2^29).
+- `--preset <format>`: Input format for indexing. Valid values: `gff`, `bed`, `sam`, `vcf`.
 
-For more information before querying:
-- `--list-chroms`:  List the sequence names stored in the index file
-- `--print-header`: Print also the header/meta lines
+**For querying:**
+- `--list-chroms`: List the sequence names stored in the index file.
+- `--print-header`: Print also the header/meta lines.
 
 **Example with (`--csi`) and (`--preset`):**
 
@@ -111,8 +114,7 @@ docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/tabix \
   --preset vcf \
   --threads $(nproc) \
   my.vcf.gz
-  ```
-  ---
+```
 
 **Example with (`--list-chroms`):**
 

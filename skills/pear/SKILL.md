@@ -1,6 +1,6 @@
 ---
 name:  PEAR
-description: "PEAR is an ultrafast, memory-efficient and highly accurate pair-end read merger. It is fully parallelized and can run with as low as just a few kilobytes of memory."
+description: "Merges overlapping paired-end FASTQ/FASTQ.GZ reads (Illumina-style forward/reverse read pairs) into single assembled sequences. Use this whenever the user has forward and reverse read files and wants to merge, assemble, or join paired-end reads, even if they just say 'merge my reads' or mention R1/R2 FASTQ files. Not for single-file reads, alignment to a reference, or structural variant calling"
 metadata:
   openclaw:
     emoji: "🧬"
@@ -43,7 +43,7 @@ This approach is **not** suitable for:
 ```bash
 docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/pear \
 pear \
--f forward_reads.fq.gz\
+-f forward_reads.fq.gz \
 -r reverse_reads.fq.gz \
 -o merged_reads \
 -j $(nproc) 
@@ -62,6 +62,13 @@ Each run of `pear` produces four files:
 - `unassembled.forward.fastq`, resp.`unassembled.reverse.fastq` — two files containing the forward, resp. reverse, unassembled reads
 - `discarded.fastq` — a file containing the discarded reads
 
+- Ex.
+  - if "merged_reads" is the output name, you should get:
+    - Assembled reads file...............: merged_reads.assembled.fastq
+    - Discarded reads file...............: merged_reads.discarded.fastq
+    - Unassembled forward reads file.....: merged_reads.unassembled.forward.fastq
+    - Unassembled reverse reads file.....: merged_reads.unassembled.reverse.fastq
+
 ---
 
 ## Additional Useful Parameters
@@ -75,7 +82,7 @@ These can be added to the `pear` command:
 - `-b`: Base PHRED quality score. (default: 33)
 
 
-**Example with (`--v`), (`-q`), (`-b`):**
+**Example with (`-v`), (`-q`), (`-b`):**
 
 - If your dataset uses **Phred 64** quality scoring instead of the standard Phred 33, and you want to enforce a stricter **minimum overlap of 20 base pairs** while trimming low-quality ends (score below 15), run:
 
@@ -96,4 +103,5 @@ pear \
 
 If the user asks for a citation for pear, provide the following:
 
-Zhang, J., Kobert, K., Flouri, T., & Stamatakis, A. (2014). PEAR: a fast and accurate Illumina Paired-End reAd mergeR. Bioinformatics, 30(5), 614–620. doi.org
+PEAR: a fast and accurate Illumina Paired-End reAd mergeR 
+Zhang et al (2014) Bioinformatics 30(5): 614-620 | doi:10.1093/bioinformatics/btt593

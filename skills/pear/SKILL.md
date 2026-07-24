@@ -1,6 +1,6 @@
 ---
 name:  PEAR
-description: "Merges overlapping paired-end FASTQ/FASTQ.GZ reads (Illumina-style forward/reverse read pairs) into single assembled sequences. Use this whenever the user has forward and reverse read files and wants to merge, assemble, or join paired-end reads, even if they just say 'merge my reads' or mention R1/R2 FASTQ files. Not for single-file reads, alignment to a reference, or structural variant calling"
+description: Merges overlapping paired-end FASTQ/FASTQ.GZ reads (Illumina-style forward/reverse read pairs) into single assembled sequences. Use this whenever the user has forward and reverse read files and wants to merge, assemble, or join paired-end reads, even if they just say 'merge my reads' or mention R1/R2 FASTQ files. Not for single-file reads, alignment to a reference, or structural variant calling
 metadata:
   openclaw:
     emoji: "🧬"
@@ -14,7 +14,7 @@ metadata:
         label: "Install Docker"
 ---
 
-# PEAR- Paired-End reAd mergeR Skill 
+# PEAR - Paired-End reAd mergeR Skill 
 
 This skill evaluates all possible paired-end read overlaps and without requiring the target fragment size as input. In addition, it implements a statistical test for minimizing false-positive results. Together with a highly optimized implementation, it can merge millions of paired end reads within a couple of minutes on a standard desktop computer.
 
@@ -31,8 +31,8 @@ This approach is **not** suitable for:
 
 ## Input Types
 
-- **Forward reads**— Gzip-compressed paired-end sequence reads (`.fastq.gz` or `.fq.gz`).
-- **Reverse reads** — Gzip-compressed paired-end sequence reads (`.fastq.gz` or `.fq.gz`).
+- **Forward reads** — Paired-end sequence reads, can be gzip-compressed (`.fastq` or `.fastq.gz`).
+- **Reverse reads** — Paired-end sequence reads, can be gzip-compressed (`.fastq` or `.fastq.gz`).
 
 ---
 
@@ -56,18 +56,14 @@ pear \
 
 ## Output
 
-Each run of `pear` produces four files:
+Each run of `pear` produces four files, if "merged_reads" is the output name, you should get:
 
-- `assembled.fastq` — A file containing the assembled reads
-- `unassembled.forward.fastq`, resp.`unassembled.reverse.fastq` — two files containing the forward, resp. reverse, unassembled reads
-- `discarded.fastq` — a file containing the discarded reads
-
-- Ex.
-  - if "merged_reads" is the output name, you should get:
-    - Assembled reads file...............: merged_reads.assembled.fastq
-    - Discarded reads file...............: merged_reads.discarded.fastq
-    - Unassembled forward reads file.....: merged_reads.unassembled.forward.fastq
-    - Unassembled reverse reads file.....: merged_reads.unassembled.reverse.fastq
+```
+Assembled reads file...............: merged_reads.assembled.fastq
+Discarded reads file...............: merged_reads.discarded.fastq
+Unassembled forward reads file.....: merged_reads.unassembled.forward.fastq
+Unassembled reverse reads file.....: merged_reads.unassembled.reverse.fastq
+```
 
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: BWA-MEM paired end mode
-description: "BWA is a software package for mapping low-divergent sequences against a large reference genome, such as the human genome. It consists of three algorithms: BWA-backtrack, BWA-SW and BWA-MEM. The first algorithm is designed for Illumina sequence reads up to 100bp, while the rest two for longer sequences ranged from 70bp to 1Mbp. BWA-MEM and BWA-SW share similar features such as long-read support and split alignment, but BWA-MEM, which is the latest, is generally recommended for high-quality queries as it is faster and more accurate. BWA-MEM also has better performance than BWA-backtrack for 70-100bp Illumina reads."
+description: "BWA is a software package for mapping low-divergent sequences against a large reference genome, such as the human genome. BWA-MEM has long-read support and split alignment, and is generally recommended for high-quality queries and 70-100bp Illumina reads."
 metadata:
   openclaw:
     emoji: "🧬"
@@ -33,7 +33,7 @@ This approach is **not** suitable for:
 
 ## Input Types
 
-- **Reference genome** — Uncompressed or compressed FASTA (`.fasta` or `.fa` or `.fastq.gz` or `.fq.gz`). 
+- **Reference genome** — Uncompressed or compressed FASTA (`.fasta` or `.fa`). 
 - **Forward reads**— Gzip-compressed paired-end sequence reads (`.fastq.gz` or `.fq.gz`).
 - **Reverse reads** — Gzip-compressed paired-end sequence reads (`.fastq.gz` or `.fq.gz`).
 
@@ -43,7 +43,7 @@ This approach is **not** suitable for:
 
 ### Step 1: Index Input FASTA Files
 
-The FASTA must be indexed using bwa. If your files are not yet indexed:
+- The FASTA must be indexed using bwa before it can be used. Skip this step if the five index files already exist alongside the reference.
 
 ```bash
 docker run --rm -v $(pwd):/ftmp \
@@ -62,9 +62,8 @@ The main function bwa mem to map by alignment is now run.
 docker run --rm -v $(pwd):/ftmp \
 -w /ftmp \
 dnalinux/bwa \
-mem -t $(nproc) reference.fasta reads_R1.fastq.gz reads_R2.fastq.gz > aligned_reads.sam'
+mem -t $(nproc) reference.fasta reads_R1.fastq.gz reads_R2.fastq.gz > aligned_reads.sam
 ```
-docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/bwa mem -t $(nproc) reference.gz reads_R1.fastq.gz reads_R2.fastq.gz > aligned_reads.sam
 
 ## Output
 

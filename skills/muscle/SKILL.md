@@ -14,7 +14,7 @@ metadata:
         label: "Install Docker"
 ---
 
-# MUSCLE Multiple Sequence Alignemnt Skill
+# MUSCLE Multiple Sequence Alignment Skill
 
 This skill generates high-quality Multiple Sequence Alignments (MSAs) of proteins, DNA, or RNA by executing MUSCLE. 
 

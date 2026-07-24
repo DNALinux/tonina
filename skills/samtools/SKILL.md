@@ -26,6 +26,8 @@ Select a specific operational path to jump directly to its complete configuratio
   - [Convert SAM to BAM](#convert-sam-to-bam)
   - [Convert BAM to CRAM](#convert-bam-to-cram)
   - [Convert SAM to CRAM](#convert-sam-to-cram)
+- **Sort and Index**
+  - [Sort and Index BAM](#sort-and-index-bam) 
 ---
 
 ## When This Skill Is Used
@@ -33,11 +35,6 @@ Select a specific operational path to jump directly to its complete configuratio
 Use this workflow when you have:
 - One raw text SAM alignments file
 - A need to convert the raw text SAM alignments file to a compressed binary BAM format or highly compressed reference-based CRAM format.
-
-This approach is **not** suitable for:
-- Two or more files
-- Pairwise assignment tasks
-- Aligning genomic structural variants, whole chromosomes, or sequencing reads against a reference genome
 
 ## Input Types
 
@@ -55,13 +52,14 @@ This approach is **not** suitable for:
 ### Step 1- Determine if @SQ lines are present in the header
 
 ```bash
-# Check directly (returns 0 if @SQ exists, 1 if missing)
+# If @SQ line exists, it should return:
+# @SQ SN:test_ref LN:17637
+
 docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
-  bash -c \
-  "samtools \
+  samtools \
   view \
   -H input.sam \
-  | grep '^@SQ'"
+  | grep -i '^@SQ'
 ```
 
 ### Step 2- Convert SAM to BAM
@@ -80,13 +78,12 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 
 #### Step 2.2- Generate BAM when @SQ lines are NOT present in header
 
-#### Step 2.2a If there is no reference fasta file, generate one. Skip this step if there is.
+#### Step 2.2a If there is no indexed reference fasta file, generate one.
 
 ```bash
 docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
   samtools \
-  faidx \
-  reference.fa
+  faidx reference.fa
 ```
 
 #### Step 2.2b Generate BAM using FASTA reference and SAM 
@@ -108,6 +105,41 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 - `-t` A tab-delimited FILE.
 - `-o`: Output file
 - `--threads`: Number of BAM compression threads to use in addition to main thread [0]. 
+
+#### Step 2.3 Sort and index BAM
+- Run [Sort and Index BAM](#sort-and-index-bam) with output.bam as the input BAM file
+
+<a id="sort-and-index-bam"></a>
+### Workflow: Sort and index compressed binary BAM file.
+
+#### Step 1- Sort and index compressed binary BAM file for efficient access
+
+#### Step 1.1a- Sort compressed binary BAM file
+- To index, the BAM file must first be sorted
+-  Note that if the sorted output file is to be indexed with samtools index, the default coordinate sort must be used. Thus the -n, -N and -t options are incompatible with samtools index. 
+
+```bash
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
+  samtools \
+  sort \
+  -m 768M \
+  -o output.sorted.bam \
+  --threads $(nproc) \
+  input.bam
+```
+- `-m`:  Approximately the maximum required memory per thread, specified either in bytes or with a K, M, or G suffix. [768 MiB]. To prevent sort from creating a huge number of temporary files, it enforces a minimum value of 1M for this setting. 
+
+#### Step 1.1b- Index sorted compressed binary BAM file
+- After the BAM file is sorted, it can be indexed
+- Note:  The BAI index format can handle individual chromosomes up to 512 Mbp (2^29 bases) in length. If your input file might contain reads mapped to positions greater than that, you will need to use a CSI index (`--csi`). 
+
+```bash
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
+  samtools \
+  index \
+  --threads $(nproc) \
+  output.sorted.bam
+```
 
 <a id="convert-bam-to-cram"></a>
 ### Workflow: Convert compressed binary BAM format file into highly compressed reference-based CRAM format file.
@@ -154,10 +186,19 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 - `--threads`: Number of BAM compression threads to use in addition to main thread [0]. 
 
 <a id="convert-sam-to-cram"></a>
-### Workflow: Convert raw text SAM alignments into compressed binary BAM format.
+### Workflow: Convert raw text SAM alignments into compressed reference-based CRAM format.
 
-### Step 1- [Convert SAM to BAM](#convert-sam-to-bam)
-### Step 2- [Convert BAM to CRAM](#convert-bam-to-cram)
+### Step 1- Convert SAM to CRAM
+
+```bash
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
+  samtools \
+  view \
+  -C \
+  -T reference.fasta \
+  -o output.cram \
+  input.sam
+```
 
 ---
 
@@ -165,12 +206,13 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 
 Each run of `samtools` produces at least one file:
 
-- `output` — An output file
+- `output` — One output file
   - if [Convert SAM to BAM](#convert-sam-to-bam) was run, an (`output.bam`) file 
   - if [Convert BAM to CRAM](#convert-bam-to-cram) was run, an (`output.cram`) file
 - `reference.fa` — One reference file
-  if [Convert SAM to BAM](#convert-sam-to-bam) or [Convert SAM to CRAM](#convert-sam-to-cram) was run and there was no reference file
-
+  - if [Convert SAM to BAM](#convert-sam-to-bam) was run and there was no reference file
+- `output.sorted.bam`
+  - if [Sort and Index BAM](#sort-and-index-bam) was run, (`output.sorted.bam.bai`) or `output.sorted.bam.csi`
 ---
 
 ## Additional Useful Parameters
@@ -189,8 +231,8 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
   samtools \
   view \
   --read-group grp2 \
-  -o /data_folder/data.rg2.bam \
-  /data_folder/data.bam
+  -o data.rg2.bam \
+  data.bam
 ```
 
 **Example: Filter by Barcode Tag File (BC:barcodes.txt)**
@@ -201,8 +243,8 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
   samtools \
   view \
   --tag-file BC:barcodes.txt \
-  -o /data_folder/data.barcodes.bam \
-  /data_folder/data.bam
+  -o data.barcodes.bam \
+  data.bam
 ```
 
 **Example: Strict Tag Filtering (RG:grp2)**
@@ -213,8 +255,32 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
   samtools \
   view \
   --tag RG:grp2 \
-  -o /data_folder/data.rg2_only.bam \
-  /data_folder/data.bam
+  -o data.rg2_only.bam \
+  data.bam
+```
+
+This can be added to the `samtools index` command:
+- `--csi`: Create a CSI index. By default, the minimum interval size for the index is 2^14, which is the same as the fixed value used by the BAI format. 
+- `--min-shift`: Create a CSI index, with a minimum interval size of 2^INT. 
+
+**Example: Creating a CSI index with default minimum interval size 2^14**
+```bash
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools
+  samtools \
+  index \
+  --csi \
+  --threads $(nproc) \
+  output.sorted.bam
+```
+
+**Example: Creating a CSI index with custom minimum interval size 2^16**
+```bash
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools
+  samtools \
+  index \
+  --min-shift 16 \
+  --threads $(nproc) \
+  output.sorted.bam
 ```
 
 ## Citation

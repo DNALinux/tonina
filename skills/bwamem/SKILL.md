@@ -90,4 +90,4 @@ These can be added to the `bwa mem` command:
 
 If the user asks for a citation, provide the following:
 
-Li H. (2013) Aligning sequence reads, clone sequences and assembly contigs with BWA-MEM. arXiv:1303.3997v2 [q-bio.GN].
+Li H. Aligning sequence reads, clone sequences and assembly contigs with BWA-MEM. arXiv preprint arXiv:1303.3997. 2013. doi:10.48550/arXiv.1303.3997

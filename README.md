@@ -6,7 +6,7 @@ Tonina is optimized to run on Linux and macOS. It integrates seamlessly with [DN
 
 ## Overview
 
-Tonina is part of the [DNALinux](https://dnalinux.com/) ecosystem and serves as a complementary project to [OmicsContainers](https://github.com/DNALinux/OmicsContainers). While OmicsContainers provides containerized versions of bioinformatics software, Tonina offers lightweight, self-contained implementations and integrations designed for direct use with AI agents, enabling seamless integration into intelligent analysis pipelines.
+Tonina is part of the [DNALinux](https://dnalinux.com/) ecosystem and serves as a complementary project to [OmicsContainers](https://github.com/DNALinux/OmicsContainers). While OmicsContainers provides containerized versions of bioinformatics software hosted on [Docker Hub](https://hub.docker.com/u/dnalinux), Tonina offers lightweight, self-contained implementations and integrations designed for direct use with AI agents, enabling seamless integration into intelligent analysis pipelines.
 
 ### What's a Skill?
 
@@ -164,7 +164,9 @@ We welcome contributions! To add a new skill or improve existing documentation:
 ## Related Resources
 
 - **OmicsContainers** — https://github.com/DNALinux/OmicsContainers
+- **DNALinux Docker Hub** — https://hub.docker.com/u/dnalinux
 - **DNALinux** — https://dnalinux.com/
+- **Toyoko** — https://toyoko.io/
 - **BioContainers** — https://github.com/BioContainers/containers
 
 ## Support

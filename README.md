@@ -1,20 +1,25 @@
 # Tonina
 
-**Tonina** is a curated collection of bioinformatics tools packaged as reusable **Skills** for genomic analysis and sequence processing. It provides modular, well-documented tools for common bioinformatics workflows including sequence quality control, genome assembly, alignment, and annotation.
+**Tonina** is a curated collection of bioinformatics tools packaged as reusable **Skills** designed to work with AI agents like [Hermes](https://toyoko.io/). These modular, well-documented tools enable genomic analysis and sequence processing through intelligent agent-driven workflows, including sequence quality control, genome assembly, alignment, and annotation.
+
+Tonina is optimized to run on Linux and macOS. It integrates seamlessly with [DNALinux](https://dnalinux.com/), a specialized Linux environment developed by [Toyoko](https://toyoko.io/) to provide a complete bioinformatics stack with agent support.
 
 ## Overview
 
-Tonina is part of the [DNALinux](https://dnalinux.com/) ecosystem and serves as a complementary project to [OmicsContainers](https://github.com/DNALinux/OmicsContainers). While OmicsContainers provides containerized versions of bioinformatics software, Tonina offers lightweight, self-contained implementations and integrations designed for direct use and integration into analysis pipelines.
+Tonina is part of the [DNALinux](https://dnalinux.com/) ecosystem and serves as a complementary project to [OmicsContainers](https://github.com/DNALinux/OmicsContainers). While OmicsContainers provides containerized versions of bioinformatics software, Tonina offers lightweight, self-contained implementations and integrations designed for direct use with AI agents, enabling seamless integration into intelligent analysis pipelines.
 
 ### What's a Skill?
 
-A **Skill** in Tonina is a self-contained tool or utility documented with:
+A **Skill** in Tonina is a self-contained tool or utility designed to be invoked by AI agents (such as Hermes), documented with:
 - A clear description of its purpose and use cases
 - CLI reference and usage examples
 - Implementation details (Docker-based or native)
 - When and how to use it in your workflow
+- Structured metadata for agent discovery and execution
 
-Each Skill is located in its own directory within `/skills/` and comes with a `SKILL.md` documentation file.
+Each Skill is located in its own directory within `/skills/` and comes with a `SKILL.md` documentation file that includes machine-readable metadata enabling agents to understand and execute the tool appropriately.
+
+Tonina runs wherever Hermes runs, making it ideal for both local development and production environments in Linux/macOS systems and the [DNALinux](https://dnalinux.com/) platform.
 
 ## Available Skills
 

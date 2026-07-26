@@ -1,8 +1,8 @@
 # Tonina
 
-**Tonina** is a curated collection of bioinformatics tools packaged as reusable **Skills** designed to work with AI agents like [Hermes](https://toyoko.io/). These modular, well-documented tools enable genomic analysis and sequence processing through intelligent agent-driven workflows, including sequence quality control, genome assembly, alignment, and annotation.
+**Tonina** is a curated collection of bioinformatics tools packaged as reusable **Skills** designed to work with AI agents like [Hermes](https://hermes-agent.nousresearch.com/). These modular, well-documented tools enable genomic analysis and sequence processing through intelligent agent-driven workflows, including sequence quality control, genome assembly, alignment, and annotation.
 
-Tonina is optimized to run on Linux and macOS. It integrates seamlessly with [DNALinux](https://dnalinux.com/), a specialized Linux environment developed by [Toyoko](https://toyoko.io/) to provide a complete bioinformatics stack with agent support.
+Tonina is optimized to run on Linux and macOS. It integrates seamlessly with [DNALinux](https://dnalinux.com/), a specialized Linux environment developed by [Toyoko Bio](https://toyoko.io/) to provide a complete bioinformatics stack with agent support.
 
 ## Overview
 
@@ -166,7 +166,7 @@ We welcome contributions! To add a new skill or improve existing documentation:
 - **OmicsContainers** — https://github.com/DNALinux/OmicsContainers
 - **DNALinux Docker Hub** — https://hub.docker.com/u/dnalinux
 - **DNALinux** — https://dnalinux.com/
-- **Toyoko** — https://toyoko.io/
+- **Toyoko Bio** — https://toyoko.io/
 - **BioContainers** — https://github.com/BioContainers/containers
 
 ## Support

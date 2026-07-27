@@ -22,7 +22,7 @@ Samtools is a set of utilities that manipulate alignments in the SAM (Sequence A
 
 Select a specific operational path to jump directly to its complete configuration and parameters:
 
-- **Format Conversion**
+- **Format Conversions**
   - [Convert SAM to BAM](#convert-sam-to-bam)
   - [Convert BAM to CRAM](#convert-bam-to-cram)
   - [Convert SAM to CRAM](#convert-sam-to-cram)
@@ -33,21 +33,42 @@ Select a specific operational path to jump directly to its complete configuratio
   - [Report Alignment Summary Statistics](#report-alignment-summary-stats)
   - [Compute Depth Statistics](#compute-depth-statistics)
 - **File operations**
-  - [Multi-way Pileup](#multi-way-pileup) 
----
+  - [Multi-way Pileup](#multi-way-pileup)
+  - [Merge](#merge)
+  ---
 
 ## When This Skill Is Used
 
 Use this workflow when you have:
 - A need to convert one raw text SAM alignments file to a compressed binary BAM format or highly compressed reference-based CRAM format.
 - A need to generate alignment or read depth statistics for a raw text SAM alignments file, compressed binary BAM format, or highly compressed reference-based CRAM format
+- A need to merge multiple sorted files
 
 ## Input Types
 
 - **SAM file** — Raw text sequence alignment/map file (`.sam`).
 - **BAM file** — Binary compressed SAM alignment file (`.bam`).
+- **CRAM file** - Highly compressed reference-based CRAM file (`.cram`)
 - **FASTA Reference** — Reference genome sequence file (`.fasta` or `.fa`) required for CRAM conversions.
 
+
+## Universal Input Validation Steps
+
+- Before running any statistics, depth calculation, or merging workflow, perform the following general steps:
+
+a. **Extract variables from the user prompt:**
+  - `<INPUT_FILE>`: The input filename or path provided by the user.
+  - `<CUSTOM_INDEX_FILE_LOCATION>`: The custom index file location provided by the user (usually for idxstats specifically)
+  - `<BED_FILE>`: The specified BED file provided by the user (usually for depth specifically)
+  - `<SORTED_FILES>`: The input filename or path provided by the user, e.g. input1.bam input2.bam input3.bam  (usually for merge specifically)
+  - `<OUTPUT_FILE>`: The specified output file provided by the user 
+
+
+b. **Validate arguments and fill missing inputs:**
+  - If any required file parameters are missing from the user request, prompt the user for them before executing the command.
+
+c. **Determine optional flags based on user request:**
+   - Append any requested optional parameters from **Additional Useful Parameters**.
 ---
 
 ## Workflows
@@ -214,15 +235,7 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 - Each category in the output is broken down into QC pass and QC fail. In the default output format, these are presented as "#PASS + #FAIL" followed by a description of the category.
 - The first row of output gives the total number of reads that are QC pass and fail (according to flag bit 0x200). For example: 122 + 28 in total (QC-passed reads + QC-failed reads) Which would indicate that there are a total of 150 reads in the input file, 122 of which are marked as QC pass and 28 of which are marked as "not passing quality controls" 
 
-### Steps
-
-#### 1. Retrieve input file 
-1a. **Extract variables from the user prompt:**
-  - `<INPUT_FILE>`: The input filename or path provided by the user.
-1b. **Validate arguments and fill missing inputs:**
-  - If `<INPUT_FILE>` is missing from the user request, prompt the user for it.
-
-#### 2. Generate simple alignment stats
+### Step 1. Generate simple alignment stats
 ```bash
 docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
   samtools \
@@ -240,17 +253,9 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 -   Retrieve and print stats in the index file corresponding to the input file. Before calling idxstats, the input BAM file should be indexed by samtools index.
 - The output is TAB-delimited with each line consisting of reference sequence name, sequence length, # mapped read-segments and # unmapped read-segments. It is written to stdout. Note this may count reads multiple times if they are mapped more than once or in multiple fragments. 
 
-### Steps
+### Step 1. Generate simple alignment stats
+-  **WARNING:  If run on a SAM or CRAM file or an unindexed BAM file, this command will still produce the same summary statistics, but does so by reading through the entire file. This is far slower than using the BAM indices.**
 
-#### 1. Retrieve input file 
-1a. **Extract variables from the user prompt:**
-  - `<INPUT_FILE>`: The input filename or path provided by the user.
-  -  **WARNING:  If run on a SAM or CRAM file or an unindexed BAM file, this command will still produce the same summary statistics, but does so by reading through the entire file. This is far slower than using the BAM indices.**
-
-1b. **Validate arguments and fill missing inputs:**
-  - If `<INPUT_FILE>` is missing from the user request, prompt the user for it.
-
-#### 2. Generate simple alignment stats
 ```bash
 docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
   samtools \
@@ -260,15 +265,8 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 <a id="#compute-depth-statistics"></a>
 ### Workflow: Computes the depth at each position or region.  
 
-### Steps
+### Step 1. Generate read depth stats
 
-#### 1. Retrieve input file 
-1a. **Extract variables from the user prompt:**
-  - `<INPUT_FILE>`: The input filename or path provided by the user.
-1b. **Validate arguments and fill missing inputs:**
-  - If `<INPUT_FILE>` is missing from the user request, prompt the user for it.
-
-#### 2. Generate read depth stats
 ```bash
 docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
   samtools \
@@ -280,15 +278,7 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 ### Workflow: Produces "pileup" textual format from an alignment 
 - Generate text pileup output for one or multiple BAM files. Each input file produces a separate group of pileup columns in the output. 
 
-### Steps
-
-#### 1. Retrieve input file 
-1a. **Extract variables from the user prompt:**
-  - `<INPUT_FILE>`: The input filename or path provided by the user.
-1b. **Validate arguments and fill missing inputs:**
-  - If `<INPUT_FILE>` is missing from the user request, prompt the user for it.
-
-#### 2. Show all possible alignments
+### Step 1. Show all possible alignments
 
 ```bash
 docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
@@ -311,25 +301,44 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 - `--excl-flags`:  Filter flags: skip reads with any of the mask bits set. This defaults to SECONDARY,QCFAIL,DUP. The option is not accumulative, so specifying e.g. --ff QCFAIL will reenable output of secondary and duplicate alignments. Note this does not override the --incl-flags option. 
 - `--disable-overlap-removal`: Overlap detection and removal is enabled by default. This option turns it off. 
 
+<a id="#merge"></a>
+### Workflow: Merges multiple sorted files into a single file  
+
+- Merge multiple sorted alignment files, producing a single sorted output file that contains all the input records and maintains the existing sort order. 
+
+### Step 1. Merge
+  - **WARNING:  Ensure all input BAMs are sorted in the same way (coordinate or query name).**
+  - **WARNING: Problems may arise when attempting to merge thousands of files together. The operating system may impose a limit on the maximum number of simultaneously open files. Additionally many files being read from simultaneously may cause a certain amount of "disk thrashing". To partially alleviate this the merge command will load 1MB of data at a time from each file, but this in turn adds to the overall merge program memory usage. Please take this into account when setting memory limits. In extreme cases, it may be necessary to reduce the problem to fewer files by successively merging subsets before a second round of merging.**
+
+```bash
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
+  samtools \
+  merge \
+  --threads $(nproc) \
+  output.bam \
+  <SORTED_FILES>
+```
 ---
 
 ## Output
 
-Each run of `samtools` produces at least one file:
+Each run of `samtools` produces output:
 
-- `output` — One output file
-  - if [Convert SAM to BAM](#convert-sam-to-bam) was run, an (`output.bam`) file 
-  - if [Convert BAM to CRAM](#convert-bam-to-cram) was run, an (`output.cram`) file
-- `reference.fa` — One reference file
-  - if [Convert SAM to BAM](#convert-sam-to-bam) was run and there was no reference file
-- `output.sorted.bam` - One corresponding index file
-  - if [Sort and Index BAM](#sort-and-index-bam) was run, (`output.sorted.bam.bai`) or `output.sorted.bam.csi`
+- format conversions
+  - `output` — One output file
+    - if [Convert SAM to BAM](#convert-sam-to-bam) was run, an (`output.bam`) file 
+    - if [Convert BAM to CRAM](#convert-bam-to-cram) was run, an (`output.cram`) file
+  - `reference.fa` — One reference file
+    - if [Convert SAM to BAM](#convert-sam-to-bam) was run and there was no reference file
+  - `output.sorted.bam` - One corresponding index file
+    - if [Sort and Index BAM](#sort-and-index-bam) was run, (`output.sorted.bam.bai`) or `output.sorted.bam.csi`
 - statistics
   - if [Generate Simple Alignment Statistics](#generate-simple-alignment-stats) was run, it defaults output to stdout, but the -O parameter allows output format to be (`.json`) or (`.tsv`).
   - if [Report Alignment Summary Statistics](#report-alignment-summary-stats) was run, it defaults output to stdout.
   - if [Compute Depth Statistics](#compute-depth-statistics) was run, it defaults output to stdout.
 - file operations
-  -  [Multi-way Pileup](#multi-way-pileup) 
+  - if [Multi-way Pileup](#multi-way-pileup) was run, it defaults output to stdout.
+  - `output.bam`- if [Merge](#merge) was run, it produces a single sorted output file.
 
 ---
 
@@ -405,18 +414,8 @@ This can be added to the `samtools idxstats` command:
 
 - `-X`: This option will allow the user to specify a customised index file location. e.g. 
 
-### Steps
+-  **WARNING:  If run on a SAM or CRAM file or an unindexed BAM file, this command will still produce the same summary statistics, but does so by reading through the entire file. This is far slower than using the BAM indices.**
 
-#### 1. Retrieve input file and custom index file location
-1a. **Extract variables from the user prompt:**
-  - `<INPUT_FILE>`: The input filename or path provided by the user.
-  -  **WARNING:  If run on a SAM or CRAM file or an unindexed BAM file, this command will still produce the same summary statistics, but does so by reading through the entire file. This is far slower than using the BAM indices.**
-  - `<CUSTOM_INDEX_FILE_LOCATION>`: The custom index file location provided by the user
-
-1b. **Validate arguments and fill missing inputs:**
-  - If `<INPUT_FILE>` and/or `<CUSTOM_INDEX_FILE_LOCATION>` is missing from the user request, prompt the user for it.
-
-#### 2. Generate simple alignment stats
 ```bash
 docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
   samtools \
@@ -430,18 +429,6 @@ These can be added to the `samtools depth` command:
 - `-aa`: Output absolutely all positions, including unused reference sequences. Note that when used in conjunction with a BED file the -a option may sometimes operate as if -aa was specified if the reference sequence has coverage outside of the region specified in the BED file. 
 - `-o`: Write output to FILE. Using “-” for FILE will send the output to stdout (also the default if this option is not used). 
 
-### Steps
-
-#### 1. Retrieve input file, bed file, and output file
-1a. **Extract variables from the user prompt:**
-  - `<INPUT_FILE>`: The input filename or path provided by the user.
-  - `<BED_FILE>`: The specified BED file provided by the user
-  - `<OUTPUT_FILE>`: The specified output file provided by the user
-
-1b. **Validate arguments and fill missing inputs:**
-  - If any of the following: `<INPUT_FILE>`, `<BED_FILE>`, `<OUTPUT_FILE>` are missing from the user request, prompt the user for it.
-
-#### 2. Generate simple alignment stats
 ```bash
 docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
   samtools \
@@ -451,6 +438,26 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
   -o <OUTPUT_FILE> \
   <INPUT_FILE>
 ``` 
+
+These can be added to the `samtools merge` command:
+
+- `-r`: Attach an RG tag to each alignment. The tag value is inferred from file names. 
+- `-h`: The @SQ headers of input files will be merged into the specified header, otherwise they will be merged into a composite header created from the input headers. If in the process of merging @SQ lines for coordinate sorted input files, a conflict arises as to the order (for example input1.bam has @SQ for a,b,c and input2.bam has b,a,c) then the resulting output file will need to be re-sorted back into coordinate order. 
+- `-c`: When several input files contain @RG headers with the same ID, emit only one of them (namely, the header line from the first file we find that ID in) to the merged output file. Combining these similar headers is usually the right thing to do when the files being merged originated from the same file. Without -c, all @RG headers appear in the output file, with random suffixes added to their IDs where necessary to differentiate them. 
+- `-p`: Similarly, for each @PG ID in the set of files to merge, use the @PG line of the first file we find that ID in rather than adding a suffix to differentiate similar IDs. 
+
+
+**Example: Attach the RG tag while merging sorted alignments**
+```bash
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools
+  printf '@RG\tID:ga\tSM:hs\tLB:ga\tPL:ILLUMINA\n@RG\tID:454\tSM:hs\tLB:454\tPL:LS454\n' > rg.txt 
+  samtools \
+  merge \
+  --threads $(nproc) \
+  -rh rg.txt \
+  merged.bam \
+  ga.bam 454.bam
+```
 
 ## Citation
 

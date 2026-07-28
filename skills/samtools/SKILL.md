@@ -1,5 +1,5 @@
 ---
-name:  samtools
+name: samtools
 description: "Manipulates, converts, sorts, indexes, and queries sequence alignments in SAM, BAM, and CRAM formats. Use when converting raw SAM files to compressed BAM/CRAM formats, inspecting headers (@SQ lines), or filtering alignment tags."
 metadata:
   openclaw:
@@ -14,7 +14,7 @@ metadata:
         label: "Install Docker"
 ---
 
-# samtools- Utilities for the Sequence Alignment/Map (SAM) format Skill 
+# samtools - Utilities for the Sequence Alignment/Map (SAM) format Skill 
 
 Samtools is a set of utilities that manipulate alignments in the SAM (Sequence Alignment/Map), BAM, and CRAM formats. It converts between the formats, does sorting, merging and indexing, and can retrieve reads in any regions swiftly. 
 
@@ -125,7 +125,7 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
   input.sam
 ```
 
-- Note: where ref.fasta.fai is generated automatically by the faidx command.
+- Note: where reference.fasta.fai is generated automatically by the faidx command.
 
 - `-b`: Output in BAM format
 - `-t` A tab-delimited FILE.
@@ -383,7 +383,7 @@ These can be added to the `samtools index` command:
 
 **Example: Creating a CSI index with default minimum interval size 2^14**
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
   samtools \
   index \
   --csi \
@@ -393,7 +393,7 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools
 
 **Example: Creating a CSI index with custom minimum interval size 2^16**
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
   samtools \
   index \
   --min-shift 16 \

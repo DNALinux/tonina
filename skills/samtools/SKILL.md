@@ -94,8 +94,7 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 
 #### Step 2.1- Generate BAM when @SQ lines are present in header
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
-  samtools \
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools:1.24-src \
   view \
   -b \
   -o output.bam \
@@ -107,16 +106,14 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 #### Step 2.2a If there is no indexed reference fasta file, generate one.
 
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
-  samtools \
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools:1.24-src \
   faidx reference.fasta
 ```
 
 #### Step 2.2b Generate BAM using FASTA reference and SAM 
 
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
-  samtools \
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools:1.24-src \
   view \
   -b \
   -t reference.fasta.fai \
@@ -144,8 +141,7 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 -  Note that if the sorted output file is to be indexed with samtools index, the default coordinate sort must be used. Thus the -n, -N and -t options are incompatible with samtools index. 
 
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
-  samtools \
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools:1.24-src \
   sort \
   -m 768M \
   -o output.sorted.bam \
@@ -159,8 +155,7 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 - Note:  The BAI index format can handle individual chromosomes up to 512 Mbp (2^29 bases) in length. If your input file might contain reads mapped to positions greater than that, you will need to use a CSI index (`--csi`). 
 
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
-  samtools \
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools:1.24-src \
   index \
   --threads $(nproc) \
   output.sorted.bam
@@ -175,8 +170,7 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 
 #### Step 1.1- Convert a BAM file to a CRAM with NM (edit distance) and MD (mismatch string) tags calculated on the fly during CRAM decode
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
-  samtools \
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools:1.24-src \
   view \
   -C \
   -T reference.fasta \
@@ -193,8 +187,7 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 - Decoding will have to include (`--input-fmt-option decode_md=0`)
 
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
-  samtools \
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools:1.24-src \
   view \
   -C \
   --output-fmt-option store_md=1 \
@@ -214,8 +207,7 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 ### Step 1- Convert SAM to CRAM
 
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
-  samtools \
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools:1.24-src \
   view \
   -C \
   -T reference.fasta \
@@ -232,8 +224,7 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 
 ### Step 1. Generate simple alignment stats
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
-  samtools \
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools:1.24-src \
   flagstat <INPUT_FILE> \
   -O default \
   -@ $(nproc)
@@ -251,8 +242,7 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 -  **WARNING:  If run on a SAM or CRAM file or an unindexed BAM file, this command will still produce the same summary statistics, but does so by reading through the entire file. This is far slower than using the BAM indices.**
 
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
-  samtools \
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools:1.24-src \
   idxstats <INPUT_FILE> 
 ``` 
 
@@ -261,8 +251,7 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 ### Step 1. Generate read depth stats
 
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
-  samtools \
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools:1.24-src \
   depth \
   <INPUT_FILE>
 ``` 
@@ -273,8 +262,7 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 ### Step 1. Show all possible alignments
 
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
-    samtools \
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools:1.24-src \
     mpileup \
     --count-orphans \
     --no-BAQ \
@@ -302,8 +290,7 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
   - **WARNING: Problems may arise when attempting to merge thousands of files together. The operating system may impose a limit on the maximum number of simultaneously open files. Additionally many files being read from simultaneously may cause a certain amount of "disk thrashing". To partially alleviate this the merge command will load 1MB of data at a time from each file, but this in turn adds to the overall merge program memory usage. Please take this into account when setting memory limits. In extreme cases, it may be necessary to reduce the problem to fewer files by successively merging subsets before a second round of merging.**
 
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
-  samtools \
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools:1.24-src \
   merge \
   --threads $(nproc) \
   output.bam \
@@ -345,8 +332,7 @@ These can be added to the `samtools view` command:
 - Output alignments in read group grp2 (records with no RG tag will also be in the output).
 
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
-  samtools \
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools:1.24-src \
   view \
   --read-group grp2 \
   -o data.rg2.bam \
@@ -357,8 +343,7 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 - Only keep reads with tag BC and where the barcode matches the barcodes listed in the barcode file.
 
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
-  samtools \
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools:1.24-src \
   view \
   --tag-file BC:barcodes.txt \
   -o data.barcodes.bam \
@@ -369,8 +354,7 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 - Only keep reads with tag RG and read group grp2. This does almost the same as -r grp2 but will not keep records without the RG tag.
 
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
-  samtools \
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools:1.24-src \
   view \
   --tag RG:grp2 \
   -o data.rg2_only.bam \
@@ -383,8 +367,7 @@ These can be added to the `samtools index` command:
 
 **Example: Creating a CSI index with default minimum interval size 2^14**
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
-  samtools \
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools:1.24-src \
   index \
   --csi \
   --threads $(nproc) \
@@ -393,8 +376,7 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 
 **Example: Creating a CSI index with custom minimum interval size 2^16**
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
-  samtools \
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools:1.24-src \
   index \
   --min-shift 16 \
   --threads $(nproc) \
@@ -409,8 +391,7 @@ This can be added to the `samtools idxstats` command:
 **Example:**
 
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
-  samtools \
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools:1.24-src \
   idxstats \
   -X <INPUT_FILE> <CUSTOM_INDEX_FILE_LOCATION>
 ``` 
@@ -422,8 +403,7 @@ These can be added to the `samtools depth` command:
 - `-o`: Write output to FILE. Using “-” for FILE will send the output to stdout (also the default if this option is not used). 
 
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
-  samtools \
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools:1.24-src \
   depth \
   -aa \
   -b <BED_FILE> \
@@ -448,8 +428,7 @@ printf '@RG\tID:ga\tSM:hs\tLB:ga\tPL:ILLUMINA\n@RG\tID:454\tSM:hs\tLB:454\tPL:LS
 
 ### Step 2 — merge inside the container
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
-  samtools \
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools:1.24-src \
   merge \
   --threads $(nproc) \
   -rh rg.txt \

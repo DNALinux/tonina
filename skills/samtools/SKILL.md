@@ -23,18 +23,18 @@ Samtools is a set of utilities that manipulate alignments in the SAM (Sequence A
 Select a specific operational path to jump directly to its complete configuration and parameters:
 
 - **Format Conversions**
-  - [Convert SAM to BAM](#convert-sam-to-bam)
-  - [Convert BAM to CRAM](#convert-bam-to-cram)
-  - [Convert SAM to CRAM](#convert-sam-to-cram)
+  - [Convert SAM to BAM] -- see heading "Workflow: Convert SAM files to BAM files with samtools view"
+  - [Convert BAM to CRAM] -- see heading "Workflow: Convert BAM files to CRAM files with samtools view"
+  - [Convert SAM to CRAM] -- see heading "Workflow: Convert SAM files to CRAM files with samtools view"
 - **Sort and Index**
-  - [Sort and Index BAM](#sort-and-index-bam) 
+  - [Sort and Index BAM] -- see heading "Workflow: Sort and Index BAM file with samtools sort and samtools index"
 - **Statistics**
-  - [Generate Simple Alignment Statistics](#generate-simple-alignment-stats) 
-  - [Report Alignment Summary Statistics](#report-alignment-summary-stats)
-  - [Compute Depth Statistics](#compute-depth-statistics)
+  - [Generate Simple Alignment Statistics] -- see heading "Workflow: Sort and Index BAM file with samtools sort and samtools index"
+  - [Report Alignment Summary Statistics] -- see heading "Workflow: Reports alignment summary statistics using samtools idxstats"
+  - [Compute Depth Statistics] -- see heading "Workflow: Compute Depth Statistics with samtools depth"
 - **File operations**
-  - [Multi-way Pileup](#multi-way-pileup)
-  - [Merge](#merge)
+  - [Multi-way Pileup] -- see heading "Produces "pileup" textual format from an alignment using samtools mpileup"
+  - [Merge BAMs] -- see heading "Workflow: Merge BAM Files with samtools merge"
   ---
 
 ## When This Skill Is Used
@@ -73,8 +73,7 @@ c. **Determine optional flags based on user request:**
 
 ## Workflows
 
-<a id="convert-sam-to-bam"></a>
-### Workflow: Convert raw text SAM alignments into compressed binary BAM format.
+### Workflow: Convert SAM files to BAM files with samtools view
 
 ### Step 1- Determine if @SQ lines are present in the header
 
@@ -110,7 +109,7 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 ```bash
 docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
   samtools \
-  faidx reference.fa
+  faidx reference.fasta
 ```
 
 #### Step 2.2b Generate BAM using FASTA reference and SAM 
@@ -120,13 +119,13 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
   samtools \
   view \
   -b \
-  -t reference.fa.fai \
+  -t reference.fasta.fai \
   -o output.bam \
   --threads $(nproc) \
   input.sam
 ```
 
-- Note: where ref.fa.fai is generated automatically by the faidx command.
+- Note: where ref.fasta.fai is generated automatically by the faidx command.
 
 - `-b`: Output in BAM format
 - `-t` A tab-delimited FILE.
@@ -134,10 +133,9 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 - `--threads`: Number of BAM compression threads to use in addition to main thread [0]. 
 
 #### Step 2.3 Sort and index BAM
-- Run [Sort and Index BAM](#sort-and-index-bam) with output.bam as the input BAM file
+- Run [Sort and Index BAM] -- see heading "Workflow: Sort and Index BAM file with samtools sort and samtools index" with output.bam as the input BAM file
 
-<a id="sort-and-index-bam"></a>
-### Workflow: Sort and index compressed binary BAM file.
+### Workflow: Sort and Index BAM file with samtools sort and samtools index
 
 #### Step 1- Sort and index compressed binary BAM file for efficient access
 
@@ -168,8 +166,7 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
   output.sorted.bam
 ```
 
-<a id="convert-bam-to-cram"></a>
-### Workflow: Convert compressed binary BAM format file into highly compressed reference-based CRAM format file.
+### Workflow: Convert BAM files to CRAM files with samtools view
 
 ### Step 1- Convert a BAM file to a CRAM file using a local reference sequence.
 - Determine if user wants to convert a BAM file to a CRAM with NM and MD tags stored verbatim rather than calculating on the fly during CRAM decode, so that mixed data sets with MD/NM only on some records, or NM calculated using different definitions of mismatch, can be decoded without change.
@@ -182,7 +179,7 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
   samtools \
   view \
   -C \
-  -T reference.fa \
+  -T reference.fasta \
   -o output.cram input.bam \
   --threads $(nproc)
 ```
@@ -212,8 +209,7 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 - `-o`: Output file
 - `--threads`: Number of BAM compression threads to use in addition to main thread [0]. 
 
-<a id="convert-sam-to-cram"></a>
-### Workflow: Convert raw text SAM alignments into compressed reference-based CRAM format.
+### Workflow: Convert BAM files to CRAM files with samtools view
 
 ### Step 1- Convert SAM to CRAM
 
@@ -227,8 +223,7 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
   input.sam
 ```
 
-<a id="generate-simple-alignment-stats"></a>
-### Workflow: Counts the number of alignments for each FLAG type 
+### Workflow: Counts the number of alignments for each FLAG type using samtools flagstat
 
 -  Does a full pass through the input file to calculate and print statistics to stdout.
 - Provides counts for each of 13 categories based primarily on bit flags in the FLAG field. Information on the meaning of the flags is given in the SAM specification document <https://samtools.github.io/hts-specs/SAMv1.pdf>.
@@ -247,8 +242,7 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 - `-O`:  Set the output format. FORMAT can be set to 'default', 'json' or 'tsv' to select the default, JSON or tab-separated values output format. If this option is not used, the default format will be selected. 
 - `-@`: Set number of additional threads to use when reading the file.  
 
-<a id="report-alignment-summary-stats"></a>
-### Workflow: Reports alignment summary statistics 
+### Workflow: Reports alignment summary statistics using samtools idxstats
 
 -   Retrieve and print stats in the index file corresponding to the input file. Before calling idxstats, the input BAM file should be indexed by samtools index.
 - The output is TAB-delimited with each line consisting of reference sequence name, sequence length, # mapped read-segments and # unmapped read-segments. It is written to stdout. Note this may count reads multiple times if they are mapped more than once or in multiple fragments. 
@@ -259,11 +253,10 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 ```bash
 docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
   samtools \
-  idxstat <INPUT_FILE> 
+  idxstats <INPUT_FILE> 
 ``` 
 
-<a id="#compute-depth-statistics"></a>
-### Workflow: Computes the depth at each position or region.  
+### Workflow: Compute Depth Statistics with samtools depth
 
 ### Step 1. Generate read depth stats
 
@@ -274,8 +267,7 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
   <INPUT_FILE>
 ``` 
 
-<a id="#multi-way-pileup"></a>
-### Workflow: Produces "pileup" textual format from an alignment 
+### Workflow: Produces "pileup" textual format from an alignment using samtools mpileup 
 - Generate text pileup output for one or multiple BAM files. Each input file produces a separate group of pileup columns in the output. 
 
 ### Step 1. Show all possible alignments
@@ -287,7 +279,7 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
     --count-orphans \
     --no-BAQ \
     --max-depth 0 \
-    --fasta-ref ref_file.fa \
+    --fasta-ref ref_file.fasta \
     --min-BQ 0 \
     --excl-flags 0 \
     --disable-overlap-removal \
@@ -301,8 +293,7 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 - `--excl-flags`:  Filter flags: skip reads with any of the mask bits set. This defaults to SECONDARY,QCFAIL,DUP. The option is not accumulative, so specifying e.g. --ff QCFAIL will reenable output of secondary and duplicate alignments. Note this does not override the --incl-flags option. 
 - `--disable-overlap-removal`: Overlap detection and removal is enabled by default. This option turns it off. 
 
-<a id="#merge"></a>
-### Workflow: Merges multiple sorted files into a single file  
+### Workflow: Merge BAM Files with samtools merge
 
 - Merge multiple sorted alignment files, producing a single sorted output file that contains all the input records and maintains the existing sort order. 
 
@@ -326,19 +317,19 @@ Each run of `samtools` produces output:
 
 - format conversions
   - `output` — One output file
-    - if [Convert SAM to BAM](#convert-sam-to-bam) was run, an (`output.bam`) file 
-    - if [Convert BAM to CRAM](#convert-bam-to-cram) was run, an (`output.cram`) file
-  - `reference.fa` — One reference file
-    - if [Convert SAM to BAM](#convert-sam-to-bam) was run and there was no reference file
+    - if [Convert SAM to BAM] was run, an (`output.bam`) file 
+    - if [Convert BAM to CRAM] was run, an (`output.cram`) file
+  - `reference.fasta` — One reference file
+    - if [Convert SAM to BAM] was run and there was no reference file
   - `output.sorted.bam` - One corresponding index file
-    - if [Sort and Index BAM](#sort-and-index-bam) was run, (`output.sorted.bam.bai`) or `output.sorted.bam.csi`
+    - if [Sort and Index BAM] was run, (`output.sorted.bam.bai`) or `output.sorted.bam.csi`
 - statistics
-  - if [Generate Simple Alignment Statistics](#generate-simple-alignment-stats) was run, it defaults output to stdout, but the -O parameter allows output format to be (`.json`) or (`.tsv`).
-  - if [Report Alignment Summary Statistics](#report-alignment-summary-stats) was run, it defaults output to stdout.
-  - if [Compute Depth Statistics](#compute-depth-statistics) was run, it defaults output to stdout.
+  - if [Generate Simple Alignment Statistics] was run, it defaults output to stdout, but the -O parameter allows output format to be (`.json`) or (`.tsv`).
+  - if [Report Alignment Summary Statistics] was run, it defaults output to stdout.
+  - if [Compute Depth Statistics] was run, it defaults output to stdout.
 - file operations
-  - if [Multi-way Pileup](#multi-way-pileup) was run, it defaults output to stdout.
-  - `output.bam`- if [Merge](#merge) was run, it produces a single sorted output file.
+  - if [Multi-way Pileup] was run, it defaults output to stdout.
+  - `output.bam`- if [Merge BAMs] was run, it produces a single sorted output file.
 
 ---
 
@@ -363,7 +354,7 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 ```
 
 **Example: Filter by Barcode Tag File (BC:barcodes.txt)**
-- Only keep reads with tag BC and were the barcode matches the barcodes listed in the barcode file.
+- Only keep reads with tag BC and where the barcode matches the barcodes listed in the barcode file.
 
 ```bash
 docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
@@ -375,7 +366,7 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
 ```
 
 **Example: Strict Tag Filtering (RG:grp2)**
-- Only keep reads with tag RG and read group grp2. This does almost the same than -r grp2 but will not keep records without the RG tag.
+- Only keep reads with tag RG and read group grp2. This does almost the same as -r grp2 but will not keep records without the RG tag.
 
 ```bash
 docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
@@ -412,14 +403,15 @@ docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools
 
 This can be added to the `samtools idxstats` command:
 
-- `-X`: This option will allow the user to specify a customised index file location. e.g. 
-
+- `-X`: Interpret the extra positional argument as the index file.
 -  **WARNING:  If run on a SAM or CRAM file or an unindexed BAM file, this command will still produce the same summary statistics, but does so by reading through the entire file. This is far slower than using the BAM indices.**
+
+**Example:**
 
 ```bash
 docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
   samtools \
-  idxstat \
+  idxstats \
   -X <INPUT_FILE> <CUSTOM_INDEX_FILE_LOCATION>
 ``` 
 
@@ -448,9 +440,15 @@ These can be added to the `samtools merge` command:
 
 
 **Example: Attach the RG tag while merging sorted alignments**
+
+### Step 1 — create rg.txt on the host in CWD (which is mounted into the container)
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools
-  printf '@RG\tID:ga\tSM:hs\tLB:ga\tPL:ILLUMINA\n@RG\tID:454\tSM:hs\tLB:454\tPL:LS454\n' > rg.txt 
+printf '@RG\tID:ga\tSM:hs\tLB:ga\tPL:ILLUMINA\n@RG\tID:454\tSM:hs\tLB:454\tPL:LS454\n' > rg.txt
+```
+
+### Step 2 — merge inside the container
+```bash
+docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/samtools \
   samtools \
   merge \
   --threads $(nproc) \

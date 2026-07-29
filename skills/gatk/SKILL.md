@@ -34,7 +34,7 @@ This approach is **not** suitable for:
 - **Reference FASTA index** — reference FASTA file index (`.fai`).
 - **Mapped BAM** — reference FASTA file (`.bam`).
 - **Mapped BAM index** — reference FASTA file index (`.bai`).
-- **Optional VCF's**- Optional VCF's for reference (`.vcf`)
+- **Optional VCFs**- Optional VCF's for reference (`.vcf`)
 ## Universal Input Validation Steps
 
 - Before running any workflow, perform the following general steps:
@@ -61,7 +61,7 @@ c. **Determine optional flags based on user request:**
 docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/gatk \
   gatk \
   CreateSequenceDictionary \
-  --REFERENCE ref.fasta \
+  --REFERENCE reference.fasta \
   --OUTPUT ref.dict
 ```
 
@@ -207,13 +207,15 @@ mkdir variants
   docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/gatk \
   gatk \
   HaplotypeCaller \
-  --reference reference.fa \
+  --reference reference.fasta \
   --input bqsr/Sample1.recalibrated.bam \
-  --output variants/Sample1.HC.vcf \
-  --intervals <INTERVALS>
+  --output variants/Sample1.HC.g.vcf \
+  --intervals <INTERVALS> \
+  --emit-ref-confidence GVCF
 ```
 
 - `--intervals`: One or more genomic intervals over which to operate
+- `--emit-ref-confidence`: Mode for emitting reference confidence scores (For Mutect2, this is a BETA feature)
 
 **Example: Multiple samples (loop)**
 - Note: For efficient merging of vcfs, we will need to output the variants as a GVCF. To do that, we will use the option --emit-ref-confidence GVCF.
@@ -231,11 +233,9 @@ do
 done
 ```
 
-- `--emit-ref-confidence`: Mode for emitting reference confidence scores (For Mutect2, this is a BETA feature)
+### Step 5: Combining GVCFs
 
-### Step 4: Combining GVCFs
-
-#### Step 4a: Generate a database, specifically GenomicsDB 
+#### Step 5a: Generate a database, specifically GenomicsDB 
 ```bash
 docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/gatk \
   gatk \
@@ -249,7 +249,7 @@ docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/gatk \
 - `--variant`: GVCF files to be imported to GenomicsDB. Each file must containdata for only a single sample. Either this or sample-name-map must be specified.
 - `--genomicsdb-workspace-path`:  Workspace for GenomicsDB. Must be a POSIX file system path, but can be a relative path. Must be an empty or non-existent directory.
 
-#### Step 4b: Perform joint genotyping on GenomicsDB workspace created with GenomicsDBImport/Retrieve the combined VCF from the database 
+#### Step 5b: Perform joint genotyping on GenomicsDB workspace created with GenomicsDBImport/Retrieve the combined VCF from the database 
 
 ```bash
 docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/gatk \

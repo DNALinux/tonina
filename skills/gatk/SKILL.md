@@ -54,17 +54,19 @@ c. **Determine optional flags based on user request:**
 
 ### Step 1: Generate necessary files
 
-**Warning: Unlike IGV, gatk requires equal chromosome names for all its input files and indexes, e.g. in .fasta, .bam and .vcf files. In general, for the human genome there are three types of chromosome names:**
+**Warning: GATK requires all input files and indexes to share identical sequence dictionaries. The FASTA reference, BAM, and VCF files must have matching contig names (@sq SN:) and lengths (LN:). If contig lengths differ, tools like BaseRecalibrator and HaplotypeCaller will fail with "incompatible contigs" errors. In general, for the human genome there are three types of chromosome names**
 
 #### Step 1a: Generate FASTA sequence dictionary file
 ```bash
 docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/gatk \
-  gatk-launch \
+  gatk \
   CreateSequenceDictionary \
-  --reference ref.fasta
+  --REFERENCE ref.fasta \
+  --OUTPUT ref.dict
 ```
 
-- `--reference`: Specify the name of reference fasta file
+- `--REFERENCE`: Specify the name of reference fasta or fasta.gz file
+- `--OUTPUT`: Output SAM file containing only the sequence dictionary. By default it will use the base name of the input reference with the .dict extension
 
 #### Step 1b: Generate indices for VCF's. 
 
@@ -89,6 +91,9 @@ docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/gatk \
   gatk \
   IndexFeatureFile \
   -I variants/1000g_gold_standard.indels.filtered.vcf
+```
+```bash
+docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/gatk \
   gatk \
   IndexFeatureFile \
   -I variants/GCF.38.filtered.renamed.vcf
@@ -119,9 +124,9 @@ for SAMPLE in Sample1 Sample2 Sample3 Sample4; do
   docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/gatk \
   gatk \
   MarkDuplicatesSpark \
-  --input $sample.aligned_reads.bam \
-  --output $sample.marked_duplicates.bam \
-  --metrics-file $sample.marked_duplicates_metrics.txt
+  --input "${SAMPLE}".aligned_reads.bam \
+  --output "${SAMPLE}".marked_duplicates.bam \
+  --metrics-file "${SAMPLE}".marked_duplicates_metrics.txt
 done
 ```
 
@@ -131,8 +136,7 @@ done
 #### Step 3a: Set up bqsr directory 
 
 ```bash
-docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/gatk \
-  mkdir bqsr
+mkdir bqsr
 ```
 
 #### Step 3b: Run GATK Base Recalibrator 
@@ -143,7 +147,8 @@ docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/gatk \
   BaseRecalibrator \
   --input Sample1.marked_duplicates.bam \
   --reference reference.fasta \
-  --known-sites <REFERENCE_VCFS> \
+  --known-sites <REFERENCE_VCF_1> \
+  --known-sites <REFERENCE_VCF_2> \
   --output bqsr/Sample1.recalibrated.table
 ```
 - `--known-sites`: One or more databases of known polymorphic sites used to exclude regions around known polymorphisms from analysis. This algorithm treats every reference mismatch as an indication of error. However, real genetic variation is expected to mismatch the reference, so it is critical that a database of known polymorphic sites is given to the tool in order to skip over those sites. This tool accepts any number of Feature-containing files (VCF, BCF, BED, etc.) for use as this database.
@@ -157,10 +162,10 @@ do
   gatk \
   BaseRecalibrator \
   --reference reference.fasta \
-  --input $sample.marked_duplicates.bam \
+  --input "${SAMPLE}".marked_duplicates.bam \
   --known-sites data/variants/GCF.38.filtered.renamed.vcf \
   --known-sites data/variants/1000g_gold_standard.indels.filtered.vcf \
-  --output bqsr/$sample.recalibrated.table
+  --output bqsr/"${SAMPLE}".recalibrated.table
 done
 ```
 
@@ -185,9 +190,9 @@ do
   docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/gatk \
   gatk \
   ApplyBQSR \
-  --input $sample.marked_duplicates.bam \
-  --bqsr-recal-file bqsr/$sample.recalibrated.table \
-  --output bqsr/$sample.recalibrated.bam
+  --input "${SAMPLE}".marked_duplicates.bam \
+  --bqsr-recal-file bqsr/"${SAMPLE}".recalibrated.table \
+  --output bqsr/"${SAMPLE}".recalibrated.bam
 done
 ```
 
@@ -195,8 +200,7 @@ done
 
 #### Step 4a:
 ```bash
-docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/gatk \
-  mkdir variants
+mkdir variants
 ```
 #### Step 4b:
 ```bash
@@ -220,8 +224,8 @@ do
   docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/gatk \
   gatk \
   HaplotypeCaller \
-  --input bqsr/$sample.recalibrated.bam \
-  --output variants/$sample.HC.g.vcf \
+  --input bqsr/"${SAMPLE}".recalibrated.bam \
+  --output variants/"${SAMPLE}".HC.g.vcf \
   --intervals <INTERVALS> \
   --emit-ref-confidence GVCF
 done
@@ -258,7 +262,7 @@ docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/gatk \
   --output variants.vcf.gz
 ```
 
-- `--java-options`: Any java-specific arguments (such as -Xmx to specify memory allocation) 
+- `--java-options`: Any java-specific arguments (such as -Xmx to specify memory allocation). This can be added to any gatk command.
 
 ## Output
 
@@ -296,9 +300,9 @@ do
   docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/gatk \
   gatk \
   HaplotypeCaller \
-  --input bqsr/$sample.recalibrated.bam \
-  --output variants/$sample.HC.g.vcf \
-  --bam-output variants/$sample.phased.bam \
+  --input bqsr/"${SAMPLE}".recalibrated.bam \
+  --output variants/"${SAMPLE}".HC.g.vcf \
+  --bam-output variants/"${SAMPLE}".phased.bam \
   --intervals <INTERVALS> \
   --emit-ref-confidence GVCF
 done

@@ -62,6 +62,13 @@ Use this workflow when you have:
 - Working with population genetics data
 - Any other computational molecular biology task
 
+## Input Types
+
+- `.fasta` for FASTA operations like reading and parsing FASTA files with Bio.SeqIO
+- `.gb` for GenBank operations like converting GenBank file to FASTA file with Bio.SeqIO
+- `.nwk` for Phylogenetic tree operations like reading and visualizing phylogenetic tree with Bio.Phylo
+
+
 ## Installation and Setup
 
 - Note: Biopython is already pre-installed inside the virtual environment (/biopython/bin/python) within the dnalinux/biopython image.
@@ -69,8 +76,7 @@ Use this workflow when you have:
 For NCBI database access, always set your email address (required by NCBI). For reusable software, set a stable `Entrez.tool` value and register the tool/email with NCBI. For higher rate limits (10 req/s instead of 3 req/s), read only `NCBI_API_KEY` from the environment — do not hardcode keys or load unrelated environment variables:
 
 ```bash
-docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/biopython \
-python3 -c '
+docker run --rm -i dnalinux/biopython /biopython/bin/python - << 'EOF'
 import os
 from Bio import Entrez
 
@@ -80,7 +86,7 @@ Entrez.tool = "your_tool_name"  # optional but recommended for reusable software
 # Optional: register at https://www.ncbi.nlm.nih.gov/account/settings/
 if api_key := os.environ.get("NCBI_API_KEY"):
     Entrez.api_key = api_key
-'
+EOF
 ```
 
 ## General Workflow Guidelines
@@ -91,64 +97,54 @@ Follow these principles when writing Biopython code:
 
 1. **Import modules explicitly**
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/biopython \
-/biopython/bin/python -c '
+docker run --rm -i dnalinux/biopython /biopython/bin/python - << 'EOF'
 from Bio import SeqIO, Entrez
 from Bio.Seq import Seq
-'
+EOF
 ```
 
 2. **Set Entrez email** when using NCBI databases; load only `NCBI_API_KEY` from the environment if present
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/biopython \
-/biopython/bin/python -c '
-  import os
-  from Bio import Entrez
+docker run --rm -i dnalinux/biopython /biopython/bin/python - << 'EOF'
+import os
+from Bio import Entrez
 
-  Entrez.email = "your.email@example.com"
-  Entrez.tool = "your_tool_name"
-  if api_key := os.environ.get("NCBI_API_KEY"):
-      Entrez.api_key = api_key
-'
+Entrez.email = "your.email@example.com"
+Entrez.tool = "your_tool_name"
+if api_key := os.environ.get("NCBI_API_KEY"):
+    Entrez.api_key = api_key
+EOF
 ```
 
 3. **Use appropriate file formats** - Check which format best suits the task
-```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/biopython \
-/biopython/bin/python -c '
-  # Common formats: "fasta", "genbank", "fastq", "clustal","phylip" 
-  '
-```
+- Common formats: "fasta", "genbank", "fastq", "clustal", "phylip" 
 
 4. **Handle files properly** - Close handles after use or use context managers
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/biopython \
-/biopython/bin/python -c '
-  with open("file.fasta") as handle:
+docker run --rm -i dnalinux/biopython /biopython/bin/python - << 'EOF'
+with open("file.fasta") as handle:
     records = SeqIO.parse(handle, "fasta")
-    '
+EOF
 ```
 
 5. **Use iterators for large files** - Avoid loading everything into memory
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/biopython \
-/biopython/bin/python -c '
+docker run --rm -i dnalinux/biopython -v "$(pwd)":/ftmp -w /ftmp /biopython/bin/python - << 'EOF'
 for record in SeqIO.parse("large_file.fasta", "fasta"):
     # Process one record at a time
-    '
+EOF
 ```
 
 6. **Handle errors gracefully** - Network operations and file parsing can fail
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/biopython \
-/biopython/bin/python -c '
+docker run --rm -i dnalinux/biopython /biopython/bin/python - << 'EOF'
 from urllib.error import HTTPError
 
 try:
     handle = Entrez.efetch(db="nucleotide", id=accession)
 except HTTPError as e:
     print(f"Error: {e}")
-'
+EOF
 ```
 7. **Reference Common Patterns if necessary**
 
@@ -159,14 +155,13 @@ except HTTPError as e:
 ### Step 1- Read and parse FASTA files with Bio.SeqIO
 
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/biopython \
-/biopython/bin/python -c '
+docker run --rm -i dnalinux/biopython -v "$(pwd)":/ftmp -w /ftmp /biopython/bin/python - << 'EOF'
 from Bio import SeqIO
 
 # Read sequences from FASTA file
 for record in SeqIO.parse("sequences.fasta", "fasta"):
     print(f"{record.id}: {len(record.seq)} bp")
-'
+EOF
 ```
 
 ### Workflow: Format Conversion (GenBank to FASTA)
@@ -174,13 +169,12 @@ for record in SeqIO.parse("sequences.fasta", "fasta"):
 ### Step 1: Format Conversion (GenBank to FASTA)
 
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/biopython \
-/biopython/bin/python -c '
+docker run --rm -i dnalinux/biopython -v "$(pwd)":/ftmp -w /ftmp /biopython/bin/python - << 'EOF'
 from Bio import SeqIO
 
 # Convert GenBank to FASTA
 SeqIO.convert("input.gb", "genbank", "output.fasta", "fasta")
-'
+EOF
 ```
 
 ### Workflow: Pairwise Alignment with Bio.Align
@@ -188,8 +182,7 @@ SeqIO.convert("input.gb", "genbank", "output.fasta", "fasta")
 ### Step 1: Pairwise Alignment with Bio.Align
 
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/biopython \
-/biopython/bin/python -c '
+docker run --rm -i dnalinux/biopython /biopython/bin/python - << 'EOF'
 from Bio import Align
 
 # Pairwise alignment
@@ -197,7 +190,7 @@ aligner = Align.PairwiseAligner()
 aligner.mode = "global"
 alignments = aligner.align("ACCGGT", "ACGGT")
 print(alignments[0])
-'
+EOF
 ```
 
 ### Workflow: Search PubMed and fetch records with Bio.Entrez
@@ -205,8 +198,7 @@ print(alignments[0])
 ### Step 1: Search PubMed and fetch records with Bio.Entrez
 
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/biopython \
-/biopython/bin/python -c '
+docker run --rm -i dnalinux/biopython /biopython/bin/python - << 'EOF'
 from Bio import Entrez
 Entrez.email = "your.email@example.com"
 
@@ -215,7 +207,7 @@ handle = Entrez.esearch(db="pubmed", term="biopython", retmax=10)
 results = Entrez.read(handle)
 handle.close()
 print(f"Found {results['Count']} results")
-'
+EOF
 ```
 
 ### Workflow: Run BLAST Search and Display top hits with Bio.Blast
@@ -223,8 +215,7 @@ print(f"Found {results['Count']} results")
 ### Step 1: Run BLAST Search and Display top hits with Bio.Blast
 
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/biopython \
-/biopython/bin/python -c '
+docker run --rm -i dnalinux/biopython /biopython/bin/python - << 'EOF'
 from Bio.Blast import NCBIWWW, NCBIXML
 
 # Run BLAST search
@@ -234,7 +225,7 @@ blast_record = NCBIXML.read(result_handle)
 # Display top hits
 for alignment in blast_record.alignments[:5]:
     print(f"{alignment.title}: E-value={alignment.hsps[0].expect}")
-'
+EOF
 ```
 
 ### Workflow: Parse protein structures and Calculate distance between alpha carbons with Bio.PDB
@@ -242,8 +233,7 @@ for alignment in blast_record.alignments[:5]:
 ### Step 1: Parse protein structures and Calculate distance between alpha carbons with Bio.PDB
 
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/biopython \
-/biopython/bin/python -c '
+docker run --rm -i dnalinux/biopython /biopython/bin/python - << 'EOF'
 from Bio.PDB import PDBParser
 
 # Parse structure
@@ -254,7 +244,7 @@ structure = parser.get_structure("1crn", "1crn.pdb")
 chain = structure[0]["A"]
 distance = chain[10]["CA"] - chain[20]["CA"]
 print(f"Distance: {distance:.2f} Å")
-'
+EOF
 ```
 
 ### Workflow: Read and visualize tree with Bio.Phylo
@@ -262,8 +252,7 @@ print(f"Distance: {distance:.2f} Å")
 ### Step 1: Read and visualize tree with Bio.Phylo
 
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/biopython \
-/biopython/bin/python -c '
+docker run --rm -i dnalinux/biopython -v "$(pwd)":/ftmp -w /ftmp /biopython/bin/python - << 'EOF'
 from Bio import Phylo
 
 # Read and visualize tree
@@ -273,7 +262,7 @@ Phylo.draw_ascii(tree)
 # Calculate distance
 distance = tree.distance("Species_A", "Species_B")
 print(f"Distance: {distance:.3f}")
-'
+EOF
 ```
 
 ## Common Patterns
@@ -281,8 +270,7 @@ print(f"Distance: {distance:.3f}")
 ### Pattern 1: Fetch Sequence from GenBank
 
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/biopython \
-/biopython/bin/python -c '
+docker run --rm -i dnalinux/biopython /biopython/bin/python - << 'EOF'
 from Bio import Entrez, SeqIO
 
 Entrez.email = "your.email@example.com"
@@ -294,14 +282,14 @@ handle.close()
 
 print(f"Description: {record.description}")
 print(f"Sequence length: {len(record.seq)}")
-'
+EOF
 ```
 
 ### Pattern 2: Sequence Analysis Pipeline
 
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/biopython \
-/biopython/bin/python -c '
+docker run --rm -i dnalinux/biopython -v "$(pwd)":/ftmp -w /ftmp /biopython/bin/python - << 'EOF'
+
 from Bio import SeqIO
 from Bio.SeqUtils import gc_fraction
 
@@ -314,14 +302,13 @@ for record in SeqIO.parse("sequences.fasta", "fasta"):
     protein = record.seq.translate()
 
     print(f"{record.id}: {length} bp, GC={gc:.2%}")
-'
+EOF
 ```
 
 ### Pattern 3: BLAST and Fetch Top Hits
 
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/biopython \
-/biopython/bin/python -c '
+docker run --rm -i dnalinux/biopython /biopython/bin/python - << 'EOF'
 from Bio.Blast import NCBIWWW, NCBIXML
 from Bio import Entrez, SeqIO
 
@@ -340,14 +327,14 @@ for acc in accessions:
     record = SeqIO.read(handle, "fasta")
     handle.close()
     print(f">{record.description}")
-'
+EOF
 ```
 
 ### Pattern 4: Build Phylogenetic Tree from Sequences
 
 ```bash
-docker run --rm -v "$(pwd)":/ftmp -w /ftmp dnalinux/biopython \
-/biopython/bin/python -c '
+docker run --rm -i dnalinux/biopython -v "$(pwd)":/ftmp -w /ftmp /biopython/bin/python - << 'EOF'
+
 from Bio import AlignIO, Phylo
 from Bio.Phylo.TreeConstruction import DistanceCalculator, DistanceTreeConstructor
 
@@ -364,7 +351,7 @@ tree = constructor.nj(dm)
 
 # Visualize
 Phylo.draw_ascii(tree)
-'
+EOF
 ```
 
 ## Citation

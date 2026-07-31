@@ -35,6 +35,7 @@ This approach is **not** suitable for:
 - **Mapped BAM** — reference FASTA file (`.bam`).
 - **Mapped BAM index** — reference FASTA file index (`.bai`).
 - **Optional VCFs**- Optional VCF's for reference (`.vcf`)
+
 ## Universal Input Validation Steps
 
 - Before running any workflow, perform the following general steps:

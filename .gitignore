@@ -216,3 +216,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# macOS system files
+.DS_Store
+
+# Project-specific files
+REFACTORING_PLAN.md

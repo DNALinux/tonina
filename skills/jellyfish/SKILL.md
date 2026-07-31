@@ -31,11 +31,11 @@ This approach is **not** suitable for:
 ## Input Types
 
 - **DNA files** — FASTA or FASTQ files containing DNA sequences (`.fasta` or `.fa`) or (`.fastq` or `.fq`).
-- Note: Jellyfish only reads FASTA or FASTQ formatted input files. By reading from pipes, jellyfish can read compressed files, like this:
+- Note: Jellyfish count natively accepts FASTA, FASTQ, SAM, BAM, and CRAM files. Compressed FASTA/FASTQ files must be decompressed and streamed via a pipe. By reading from pipes, jellyfish can read compressed files, like this:
 ```bash
 docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/jellyfish \
 bash -c '
-zcat *.fastq.gz | jellyfish count /dev/fd/0
+zcat *.fastq.gz | jellyfish count /dev/fd/0 -m 21 -s 100M -o mer_counts.jf
 '
 ```
 

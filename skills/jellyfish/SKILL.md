@@ -34,7 +34,9 @@ This approach is **not** suitable for:
 - Note: Jellyfish only reads FASTA or FASTQ formatted input files. By reading from pipes, jellyfish can read compressed files, like this:
 ```bash
 docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/jellyfish \
-  zcat *.fastq.gz | jellyfish count /dev/fd/0 ...
+bash -c '
+zcat *.fastq.gz | jellyfish count /dev/fd/0
+'
 ```
 
 # Jellyfish Task Router
@@ -68,7 +70,7 @@ count \
 -m 21 \
 -s 100M \
 -t $(nproc) \
--o mer_counts \
+-o mer_counts.jf \
 -C \
 reads.fasta
 ```
@@ -76,8 +78,32 @@ reads.fasta
 - `-m`: Length of mer
 - `-s`: Hash size
 - `-t`: Number of threads (1)
-- `-o`: Output prefix (mer_counts)
+- `-o`: Output file
 - `-C`: Count both strands, canonical representation (false)
+
+**Note on Hash Size:**
+- Set -s to roughly the number of distinct k-mers you expect to count, and for short-read data multiply by ~1.5 for safety.
+- More concretely:
+  - Single genome or assembled FASTA
+    - Estimate for -s: Genome size in bp (or 2× if not using -C)
+  - 30× whole-genome resequencing
+    - Estimate for -s: Total distinct k-mers ≈ total sequenced bases. For a 3 Gbp genome at 30×, that's ~90 Gbp, so use -s 90G if counting everything.
+  - High-frequency only (e.g., >1×, with Bloom filter)
+    - Estimate for -s: Use the expected genome size, not the read volume. For human, -s 3G is standard.
+  - Bacterial genome (~5 Mbp)
+    - Estimate for -s: -s 10M to -s 50M is plenty.
+- Quick formula
+  - -s ≈ (genome_size × ploidy × coverage / coverage_threshold) × safety_factor
+  - Where:
+    - genome_size = haploid genome length
+    - ploidy = 2 for diploid, 1 for haploid
+    - coverage_threshold = minimum count you keep (e.g., 2 if you discard singletons)
+    - safety_factor = 1.5 to 2.0 to avoid rehashing
+- Example
+  - Human genome, 3 Gbp, diploid, 30× coverage, keeping k-mers seen ≥2 times:
+  - -s ≈ (3 Gbp × 2 × 30 / 2) × 1.5 ≈ 135 G
+  - So -s 100G to -s 150G is reasonable.
+- If you set -s too small, Jellyfish will still work but will rehash multiple times, slowing down the run. If you set it too large, it simply allocates more memory than needed. The error message "Too many k-mers in hash" means the hash filled up and you should increase -s or use a Bloom filter.
 
 ### Workflow: Compute Histogram with jellyfish histo
 
@@ -175,11 +201,18 @@ Each run of `jellyfish` produces at least one file:
 
 ## Additional Useful Parameters
 
-These can be added to the `jellyfish` command:
+These can be added to the `jellyfish count` command:
 
 - `--if`: count the number of occurrences of only a subset of predefined k-mers
+  - Input to `jellyfish count` will still be the main input being scanned.
+  - Input to the `--if` flag will be the whitelist: only k-mers present here are counted in input genome file to jellyfish count. The output jellyfish file contains counts for k-mers that appear in both files.
+  - Note that k-mers in chr20.fa must have the same length as -m. Whitelisted k-mers that do not occur in the input genome file to jellyfish count will still appear in the output with count 0.
 
 **Example: Counting a subset of k-mers- Count the number of occurrences of the 20-mers of chromosome 20 in chromosome 1 of human**
+- chr1.fa is the main input being scanned.
+- chr20.fa is the whitelist: only k-mers present here are counted in chr1.fa. The output chr1_shared_with_chr20.jf contains counts for k-mers that appear in both files.
+- Important: k-mers in chr20.fa must have the same length as -m (20 in this example). Whitelisted k-mers that do not occur in chr1.fa will still
+appear in the output with count 0.
 
 ```bash
 docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/jellyfish \
@@ -189,7 +222,7 @@ count \
 -s 100M \
 -C \
 -t $(nproc) \
--o 20and1.jf \
+-o chr1_shared_with_chr20.jf \
 --if chr20.fa \
 chr1.fa
 ```

@@ -41,7 +41,7 @@ SPAdes is a de novo genome assembler designed for bacterial and small eukaryotic
 Most common use case with standard Illumina paired-end reads:
 
 ```bash
-docker run --network=none -v $(pwd):/ftmp dnalinux/spades spades.py \
+docker run --network=none -v $(pwd):/ftmp dnalinux/spades:4.2.0-src spades.py \
   -1 /ftmp/reads_R1.fastq.gz \
   -2 /ftmp/reads_R2.fastq.gz \
   -o /ftmp/output_directory
@@ -57,7 +57,7 @@ docker run --network=none -v $(pwd):/ftmp dnalinux/spades spades.py \
 Use both paired-end and mate-pair libraries for better scaffolding:
 
 ```bash
-docker run --network=none -v $(pwd):/ftmp dnalinux/spades spades.py \
+docker run --network=none -v $(pwd):/ftmp dnalinux/spades:4.2.0-src spades.py \
   --pe1-1 /ftmp/pe_reads_R1.fastq.gz --pe1-2 /ftmp/pe_reads_R2.fastq.gz \
   --mp1-1 /ftmp/mp_reads_R1.fastq.gz --mp1-2 /ftmp/mp_reads_R2.fastq.gz \
   -o /ftmp/output_directory
@@ -73,7 +73,7 @@ docker run --network=none -v $(pwd):/ftmp dnalinux/spades spades.py \
 For single-cell sequencing data with MDA bias correction:
 
 ```bash
-docker run --network=none -v $(pwd):/ftmp dnalinux/spades spades.py \
+docker run --network=none -v $(pwd):/ftmp dnalinux/spades:4.2.0-src spades.py \
   --sc \
   -1 /ftmp/sc_reads_R1.fastq.gz \
   -2 /ftmp/sc_reads_R2.fastq.gz \
@@ -88,7 +88,7 @@ Combining Illumina short reads with PacBio or Nanopore long reads:
 
 **PacBio:**
 ```bash
-docker run --network=none -v $(pwd):/ftmp dnalinux/spades spades.py \
+docker run --network=none -v $(pwd):/ftmp dnalinux/spades:4.2.0-src spades.py \
   -1 /ftmp/illumina_R1.fastq.gz -2 /ftmp/illumina_R2.fastq.gz \
   --pacbio /ftmp/pacbio_reads.fastq.gz \
   -o /ftmp/hybrid_output
@@ -96,7 +96,7 @@ docker run --network=none -v $(pwd):/ftmp dnalinux/spades spades.py \
 
 **Nanopore:**
 ```bash
-docker run --network=none -v $(pwd):/ftmp dnalinux/spades spades.py \
+docker run --network=none -v $(pwd):/ftmp dnalinux/spades:4.2.0-src spades.py \
   -1 /ftmp/illumina_R1.fastq.gz -2 /ftmp/illumina_R2.fastq.gz \
   --nanopore /ftmp/nanopore_reads.fastq.gz \
   -o /ftmp/hybrid_output
@@ -109,7 +109,7 @@ docker run --network=none -v $(pwd):/ftmp dnalinux/spades spades.py \
 For high-coverage bacterial isolates, use `--isolate` mode:
 
 ```bash
-docker run --network=none -v $(pwd):/ftmp dnalinux/spades spades.py \
+docker run --network=none -v $(pwd):/ftmp dnalinux/spades:4.2.0-src spades.py \
   -1 /ftmp/reads_R1.fastq.gz -2 /ftmp/reads_R2.fastq.gz \
   -o /ftmp/output_directory \
   -t 16 \
@@ -124,14 +124,17 @@ docker run --network=none -v $(pwd):/ftmp dnalinux/spades spades.py \
 
 ## Pitfalls
 
-**SPAdes 4.x ignores --careful:**
-In SPAdes 4.x, `--careful` is ignored and prints a warning. Use `--isolate` instead for bacterial isolates.
+**--careful works in 4.x (verified 2026-09, v4.2.0):**
+Earlier guidance claimed SPAdes 4.x ignores `--careful`. Empirically false: `spades.py --test --careful -t 4 -m 4` on `dnalinux/spades:4.2.0-src` (v4.2.0) logs "Mismatch careful mode is turned ON" and runs `K21/configs/careful_mode.info`. The only warning was the generic "No assembly mode was specified!" hint. `--isolate` remains the recommended default for high-coverage isolates.
 
-**Memory estimation is strict:**
-`-m` is not an OS-level cap — SPAdes will abort if it estimates it needs more memory than specified. Set conservatively for large datasets.
+**Memory estimation is strict (documented, unverified):**
+`-m` is not an OS-level cap — SPAdes will abort if it estimates it needs more memory than specified. Observed: a `-m 1` run accepted the limit and began read error correction; the abort itself was not captured. Set conservatively for large datasets.
 
-**Output directory must not exist:**
-SPAdes will fail if the output directory already exists. Delete or rename before re-running.
+**Output directory must not exist (documented, unverified):**
+SPAdes is documented to fail if the output directory already exists — delete or rename before re-running. Not independently verified; a completed `--test` run followed by a second `--test` run did not fail immediately. See `references/verification-4.2.0.md`.
+
+**`--test` and `-o` are mutually exclusive:**
+`spades.py --test -o <dir>` fails with "== Error ==  you cannot specify -o and --test simultaneously". Use `--test` alone (writes to its own directory) or real input reads with `-o`.
 
 **Large genomes are impractical:**
 SPAdes is not designed for large eukaryotic genomes. Attempting human or plant genome assembly will consume excessive memory and time.

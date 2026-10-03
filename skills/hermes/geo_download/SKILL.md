@@ -1,7 +1,7 @@
 ---
 name: geo-gsm-download
 description: Download the processed supplementary files of any GEO sample (GSM accession), e.g. 10x scRNA-seq count matrices (features.tsv.gz, barcodes.tsv.gz, matrix.mtx.gz)
-version: 1.0.0
+version: 1.1.0
 platforms: [linux]
 metadata:
   hermes:
@@ -24,8 +24,8 @@ Downloads the processed data files attached to any GEO **sample record** (GSM ac
 - Fetching Cell Ranger-style 10x count matrices to start an scRNA-seq workflow (QC → normalize → integrate, e.g. the Seurat pipeline)
 - Any analysis starting from processed per-sample matrices rather than raw reads
 
-**Not suitable for:**
-- Raw reads (FASTQ) → those live in SRA; use `sra-toolkit` (`prefetch`/`fasterq-dump`) on the SRR linked in the sample's Relations section
+**For raw reads (FASTQ):**
+Use `sra-toolkit` (`prefetch`/`fasterq-dump`) on the SRR linked in the sample's Relations section — raw reads live in SRA, while this skill fetches the processed supplementaries.
 
 ## Procedure
 
@@ -94,14 +94,21 @@ ls -l "$DEST"
 
 ## Pitfalls
 
-**Do not decompress:**
-Keep the `.gz` files as-is. Downstream readers (`read.delim(gzfile(...))`, `Matrix::readMM(gzfile(...))`, Seurat's `Read10X()`) read gzip directly.
+**Keep the `.gz` files compressed:**
+Downstream readers (`read.delim(gzfile(...))`, `Matrix::readMM(gzfile(...))`, Seurat's `Read10X()`) read gzip directly — compressed is the expected on-disk state.
 
-**Not every GSM has the 3-file 10x layout:**
-Some deposit a single dense table (`.txt.gz`/`.csv.gz`) or extra files such as `aggregation.csv`. The step-3 loop downloads whatever exists; if the features/barcodes/matrix trio is absent, the sample is not directly usable as a 10x matrix — adapt the loader or fetch from the GSE series.
+**Dense-table deposits:**
+Some samples deposit a single dense table (`.txt.gz`/`.csv.gz`) or extra files such as `aggregation.csv`. The step-3 loop downloads whatever exists; treat the features/barcodes/matrix trio as the marker for direct 10x usability — with the trio present, proceed to the Seurat workflow; with a dense table or extras, adapt the loader or fetch from the GSE series.
 
-**Be polite to NCBI:**
-Don't parallel-hammer the FTP mirror. The loop is sequential and supports resume (`-C -`) for that reason.
+**Sequential, resumable transfers are the NCBI-friendly mode:**
+The FTP mirror serves many concurrent clients well; keep the download loop sequential and rely on resume (`-C -`) to recover interrupted transfers.
+
+**Flat-name consumers:**
+This layout (`./<GSMID>/` subfolders) coexists with skills that expect the six files flat in the data dir — e.g. `seurat-load-qc`'s script opens `/data/<GSM>_<label>_*.gz` paths directly. Bridge the gap non-destructively:
+```bash
+cd "$DATA_DIR" && ln -sf GSM*/GSM*_*.gz .
+```
+See `seurat-load-qc` Pitfalls for the full worked example.
 
 ## Verification
 
@@ -129,7 +136,53 @@ Pass criteria:
 
 - `HDR` is three numbers: `genes cells nnz`, where `genes == L_GENES` and `cells == L_CELLS`.
 - The `%%MatrixMarket` header line (first line of the `.mtx`) contains the word `integer` → confirms **raw counts** (normalized data would say `real`).
-- If any of `FEAT`/`BC`/`MTX` is empty, the 3-file 10x layout is missing — see Pitfalls.
+- `FEAT`/`BC`/`MTX` all non-empty → the 3-file 10x layout is present; with a dense table or extras instead, see Pitfalls for the 10x-usability check.
+
+### Identifying conditions / sample metadata (when the file name suffix is not enough)
+
+Resolve the sample's series metadata through **NCBI E-utilities** — structured XML, machine-readable, two calls:
+
+```bash
+GSM=GSM5821748
+
+# 1. Resolve the GSM to its gds UID ([ACCN] filter, URL-encoded).
+#    Name the lookup variable GID (bash reserves `UID` as a readonly builtin).
+GID=$(curl -s "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=gds&term=${GSM}%5BACCN%5D" \
+  | grep -oE "<Id>[0-9]+</Id>" | grep -oE "[0-9]+" | head -1)
+
+# 2. Fetch series + per-sample metadata in one file
+curl -s "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=gds&id=$GID" -o esum.xml
+```
+
+Series-level signal — items named `title`/`summary` (study-design prose):
+
+```bash
+grep -oE '<Item Name="(title|summary)"[^>]*>[^<]*' esum.xml | sed 's/<[^>]*>//g'
+```
+
+Per-sample titles — the strongest, machine-readable signal for declaring conditions
+in a downstream `seurat-load-qc` manifest (one `GSM = title` pair per sample). Each
+sample's Accession and Title travel in separate `<Item>` elements, so keep records
+at `</Item>` granularity for the pairing to capture every sample:
+
+```bash
+awk 'BEGIN{RS="</Item>"}
+     /<Item Name="Accession"[^>]*>GSM[0-9]+/ { acc=$0; sub(/.*>GSM/,"GSM",acc) }
+     acc!="" && /<Item Name="Title"/ { t=$0; sub(/.*>/,"",t); print acc" = "t; acc="" }' esum.xml
+```
+
+Validated example — GSE193807 (nuclear-accident patient, skin scRNA-seq):
+
+```
+GSM5821749 = IR
+GSM5821748 = non-irradiated control
+```
+
+(study design: control = belly skin, IR = irradiated right-hand skin)
+
+Cross-check the per-sample titles against the file-name suffixes (`_con_`, `_IR_`,
+...) before declaring conditions in a manifest; when they disagree, the per-sample
+title wins.
 
 ## Key Parameters
 

@@ -26,8 +26,6 @@ Downloads the processed data files attached to any GEO **sample record** (GSM ac
 
 **Not suitable for:**
 - Raw reads (FASTQ) → those live in SRA; use `sra-toolkit` (`prefetch`/`fasterq-dump`) on the SRR linked in the sample's Relations section
-- Samples whose page says "Supplementary data files not provided" / "Processed data are available on Series record" → fetch from the parent **GSE** record instead
-- Normalized data → GEO supplementaries for 10x are almost always **raw counts** ("Matrix table with raw gene counts..."); do not skip normalization downstream
 
 ## Procedure
 
@@ -78,25 +76,29 @@ curl -s "$BASE/" | grep -oE 'href="[^"]+"' | cut -d'"' -f2 | grep '\.gz$' | sort
 - `-O` keep the remote file name — downstream tools expect those names
 - The loop is sequential on purpose — see Pitfalls
 
-## Pitfalls
 
-**Processed ≠ normalized:**
-GEO `Data processing` sections often mention Seurat `NormalizeData`, but the deposited 10x files are raw integer UMI counts (see `Supplementary_files_format_and_content`). A downstream `NormalizeData()` step is still required.
+### 4. (Optional) Prepare a Seurat Read10X() view
+
+Seurat's `Read10X()` requires files literally named `matrix.mtx.gz`, `features.tsv.gz`, and `barcodes.tsv.gz` in one directory per sample. GEO files carry a sample prefix, so create a **symlink view** instead of renaming or copying (preserves provenance; no data duplication):
+
+```bash
+# run from the parent of ./<GSMID>/  (e.g. ~/geo_data)
+GSM=GSM1234567          # same accession used in step 1
+DEST="read10x/${GSM}"
+mkdir -p "$DEST"
+for KIND in features.tsv barcodes.tsv matrix.mtx; do
+  ln -sf "$(pwd)/${GSM}/"*_"${KIND}.gz" "${DEST}/${KIND}.gz"
+done
+ls -l "$DEST"
+```
+
+## Pitfalls
 
 **Do not decompress:**
 Keep the `.gz` files as-is. Downstream readers (`read.delim(gzfile(...))`, `Matrix::readMM(gzfile(...))`, Seurat's `Read10X()`) read gzip directly.
 
 **Not every GSM has the 3-file 10x layout:**
 Some deposit a single dense table (`.txt.gz`/`.csv.gz`) or extra files such as `aggregation.csv`. The step-3 loop downloads whatever exists; if the features/barcodes/matrix trio is absent, the sample is not directly usable as a 10x matrix — adapt the loader or fetch from the GSE series.
-
-**curl vs wget on minimal Linux systems:**
-Full server distributions ship both `curl` and `wget`, but minimal images may have only `wget` — or neither. The wget equivalent of the download step is:
-
-```bash
-wget -c "${BASE}/${F}"
-```
-
-(`wget -c` resumes partial downloads, equivalent to `curl -C -`.)
 
 **Be polite to NCBI:**
 Don't parallel-hammer the FTP mirror. The loop is sequential and supports resume (`-C -`) for that reason.

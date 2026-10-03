@@ -1,7 +1,7 @@
 ---
 name: seurat-load-qc
-description: Load 10x count matrices into Seurat, apply cell-level QC, and save per-condition QC'd .rds objects (scRNA-seq workflow Actions 1-3); manifest-driven, any files and any conditions
-version: 1.1.0
+description: Load 10x count matrices into Seurat, apply cell-level QC, and save per-condition QC'd .rds objects (scRNA-seq workflow Actions 1-3); manifest-driven, any files and any conditions; study parameters are confirmed with the user before running
+version: 1.2.0
 platforms: [linux]
 metadata:
   hermes:
@@ -80,20 +80,47 @@ cp scripts/actions_1_to_3.R "$DATA_DIR/"
 
 (Paths are relative to the skill directory; adjust if invoking from elsewhere.)
 
-### 4. Run Actions 1-3
+### 4. Confirm the study parameters with the user (required gate)
+
+Before running, present the parameters that will be applied, with defaults and meaning, and ask the user to keep or change them. **Do not proceed to step 5 until the user has explicitly answered.**
+
+Present this table, then ask e.g.: *"These are the filter parameters that will be applied. Keep all defaults, or change any?"*
+
+| Parameter | Env var | Default | What it controls |
+|-----------|---------|---------|------------------|
+| `min.cells` | `MIN_CELLS` | 3 | Import filter: a gene is kept only if detected in ≥ this many cells. Genes seen in 1-2 cells are usually ambient RNA / noise and carry no usable statistic. |
+| `min.features` | `MIN_FEAT` | 500 | Import filter: a cell is kept only if ≥ this many genes are detected. Below this, a barcode is likely an empty droplet or a broken cell; healthy mammalian cells typically express ~1,000-3,000+ genes. |
+| QC gene floor | `QC_MIN_GENES` | 500 | Cell QC: discard cells with nFeature_RNA ≤ this value (same floor as `min.features`, applied after import). |
+| QC gene ceiling | `QC_MAX_GENES` | 5000 | Cell QC: discard cells above this nFeature_RNA (potential high-complexity / doublet-like events). |
+| `percent.mito` cap | `QC_MAX_MITO` | 10 | Cell QC: discard cells whose mitochondrial fraction is ≥ this % (dying/broken-cell signature). |
+| MT gene pattern | `MT_PATTERN` | `^MT-` | Regex selecting mitochondrial genes. Human GRCh38: `^MT-`; mouse: `^mt-`. |
+
+These are **study parameters, not universal defaults** — on a new dataset they should be informed by its QC distributions (e.g., the valley in the nFeature_RNA violin plot).
+
+- User confirms defaults → run step 5 unchanged.
+- User changes values → pass each override as `-e ENV_VAR=value` in step 5.
+
+### 5. Run Actions 1-3
 
 ```bash
 docker run --rm -v "$DATA_DIR":/data \
   dnalinux/scrnaseq_r_workflow:latest Rscript /data/actions_1_to_3.R
 ```
 
-The container runs the script and exits when it finishes.
+With user-confirmed overrides (example: `MIN_CELLS=5`, `MIN_FEAT=400`):
 
-Expected log — one LOAD/IMPORT/QC/SAVED block per manifest row (cell counts below are the validated values for the GSM5821748/GSM5821749 pair; yours will differ by dataset):
+```bash
+docker run --rm -e MIN_CELLS=5 -e MIN_FEAT=400 \
+  -v "$DATA_DIR":/data \
+  dnalinux/scrnaseq_r_workflow:latest Rscript /data/actions_1_to_3.R
+```
+
+The container runs the script and exits when it finishes. The first log line echoes the effective parameters:
 
 ```
+PARAMS    min.cells=5 min.features=400 qc_genes=(500,5000) max_mito=10 mt_pattern=^MT-
 LOAD     Control: 36601 genes x 8647 cells
-IMPORT   Control: ... (after min.cells=3, min.features=500)
+IMPORT   Control: ... (after min.cells=5, min.features=400)
 QC       Control: 8647 -> 4588 cells kept; percent.mito range [0.06, 10.00]
 SAVED    Control -> Control_qc.rds
 LOAD     Irradiated: 36601 genes x 8355 cells
@@ -102,13 +129,21 @@ SAVED    Irradiated -> Irradiated_qc.rds
 DONE: actions 1-3 complete for 2 sample(s)
 ```
 
+(Cell counts above are the validated reference values for the GSM5821748/GSM5821749 pair **at default parameters**; they change with overrides and differ by dataset.)
+
 ## Pitfalls
+
+**Override did not take effect:**
+The log's first line is the audit trail — `PARAMS` shows exactly what was applied. `-e` flags must come **before** the image name in `docker run`; anything after the image name is treated as arguments to `Rscript`, not as environment for the script's parameter readers.
 
 **Manifest parse problems (`undefined columns selected`, wrong splits):**
 The file must be TAB-separated with the exact header `condition TAB features TAB barcodes TAB matrix`. Use the `printf` form, not spaces.
 
 **`percent.mito` all zero:**
-The `^MT-` pattern matched no genes. Human GRCh38 references use `MT-`; mouse references use `^mt-`. Match the pattern case to the reference genome.
+The `MT_PATTERN` matched no genes. Human GRCh38 references use `^MT-`; mouse references use `^mt-`. Match the pattern (and its case) to the reference genome.
+
+**`Error: Missing input file: ...`:**
+A file named in the manifest is absent from the data directory. Compare manifest rows against step 1's `ls`; names must match exactly, including case and `.gz` suffix.
 
 ## Verification
 
@@ -151,9 +186,8 @@ Pass criteria: one `PASS` line per manifest row, each showing `percent.mito < 10
 | Manifest | `/data/samples.tsv` | TSV: `condition`, `features`, `barcodes`, `matrix`; one row per condition |
 | Invocation | `Rscript /data/actions_1_to_3.R` | runs headless |
 | Script source | `scripts/actions_1_to_3.R` | ships with the skill; copy to the data dir |
-| `min.cells` / `min.features` | 3 / 500 | import filters (study parameters, config block in script) |
-| QC band | 500 < nFeature_RNA < 5000 | study parameters, config block in script |
-| `percent.mito` | `< 10`, pattern `^MT-` | human; `^mt-` for mouse |
+| Study-parameter gate | step 4 | agent presents defaults (3 / 500 / 500 / 5000 / 10 / `^MT-`), user confirms or overrides |
+| Overrides | `-e MIN_CELLS=5 -e MIN_FEAT=400 ...` | docker env vars; unset vars fall back to script defaults; effective set echoed as the `PARAMS` log line |
 | Outputs | `<condition>_qc.rds` per manifest row, `sessionInfo_qc.txt` | state after Action 3 (pre-normalization) |
 
 ## Citation

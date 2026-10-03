@@ -1,9 +1,12 @@
 # actions_1_to_3.R
-# Companion script for the hermes skill "seurat-load-qc"
+# Companion script for the hermes skill "seurat-load-qc" (generic manifest runner)
 # Actions 1-3: Load 10x -> CreateSeuratObject -> Cell-level QC -> save .rds
 #
-# Runs inside dnalinux/scrnaseq_r_workflow (R + Seurat + Matrix present),
-# with the host data directory mounted at /data:
+# Samples are declared in /data/samples.tsv (TAB-separated):
+#   condition<TAB>features<TAB>barcodes<TAB>matrix
+# One /data/<condition>_qc.rds is written per manifest row.
+#
+# Run inside dnalinux/scrnaseq_r_workflow with the data dir mounted at /data:
 #   docker run --rm -v "$DATA_DIR":/data \
 #     dnalinux/scrnaseq_r_workflow:latest Rscript /data/actions_1_to_3.R
 
@@ -12,8 +15,9 @@ library(Matrix)
 
 msg <- function(...) message(sprintf(...))
 
-# ---- Study parameters (configurable; see workflow doc S04) ----------------
+# ---- Study parameters (edit per dataset) -----------------------------------
 DATA_DIR     <- "/data"
+MANIFEST     <- file.path(DATA_DIR, "samples.tsv")
 MIN_CELLS    <- 3        # import filter: genes must appear in >= 3 cells
 MIN_FEAT     <- 500      # import filter: cells must have >= 500 genes
 QC_MIN_GENES <- 500      # cell QC: nFeature_RNA lower bound (exclusive)
@@ -21,7 +25,7 @@ QC_MAX_GENES <- 5000     # cell QC: nFeature_RNA upper bound
 QC_MAX_MITO  <- 10       # cell QC: mitochondrial % must be < this
 MT_PATTERN   <- "^MT-"   # human mitochondrial genes (mouse: "^mt-")
 
-# ---- Action 1: loader ------------------------------------------------------
+# ---- Action 1: loader -------------------------------------------------------
 read_10x_tsv_mtx <- function(features, barcodes, mtx) {
   genes <- read.delim(gzfile(features), header = FALSE, stringsAsFactors = FALSE)
   cells <- read.delim(gzfile(barcodes), header = FALSE, stringsAsFactors = FALSE)
@@ -32,8 +36,8 @@ read_10x_tsv_mtx <- function(features, barcodes, mtx) {
   mat
 }
 
-# ---- Actions 2+3 per sample ------------------------------------------------
-process_sample <- function(feat_f, bc_f, mtx_f, project, condition, out_rds) {
+# ---- Actions 2+3 for one sample ---------------------------------------------
+process_sample <- function(feat_f, bc_f, mtx_f, condition, out_rds) {
   # Action 1 — load processed 10x matrix
   mat <- read_10x_tsv_mtx(file.path(DATA_DIR, feat_f),
                           file.path(DATA_DIR, bc_f),
@@ -41,7 +45,7 @@ process_sample <- function(feat_f, bc_f, mtx_f, project, condition, out_rds) {
   msg("LOAD     %s: %d genes x %d cells", condition, nrow(mat), ncol(mat))
 
   # Action 2 — create Seurat object + import-level filters + condition metadata
-  obj <- CreateSeuratObject(mat, project = project,
+  obj <- CreateSeuratObject(mat, project = condition,
                             min.cells = MIN_CELLS, min.features = MIN_FEAT)
   obj$condition <- condition
   rm(mat)
@@ -66,15 +70,17 @@ process_sample <- function(feat_f, bc_f, mtx_f, project, condition, out_rds) {
   invisible(obj)
 }
 
-# ---- Run both conditions ---------------------------------------------------
-con <- process_sample("GSM5821748_con_features.tsv.gz",
-                      "GSM5821748_con_barcodes.tsv.gz",
-                      "GSM5821748_con_matrix.mtx.gz",
-                      "Control",    "Control",    "con_qc.rds")
-ir  <- process_sample("GSM5821749_IR_features.tsv.gz",
-                      "GSM5821749_IR_barcodes.tsv.gz",
-                      "GSM5821749_IR_matrix.mtx.gz",
-                      "Irradiated", "Irradiated", "ir_qc.rds")
+samples <- read.delim(MANIFEST, stringsAsFactors = FALSE)
+stopifnot(all(c("condition", "features", "barcodes", "matrix") %in% colnames(samples)),
+          nrow(samples) >= 1)
+
+for (i in seq_len(nrow(samples))) {
+  s <- samples[i, ]
+  for (p in c(s$features, s$barcodes, s$matrix))
+    if (!file.exists(file.path(DATA_DIR, p))) stop("Missing input file: ", p)
+  process_sample(s$features, s$barcodes, s$matrix,
+                 s$condition, paste0(s$condition, "_qc.rds"))
+}
 
 writeLines(capture.output(sessionInfo()), file.path(DATA_DIR, "sessionInfo_qc.txt"))
-msg("DONE: actions 1-3 complete")
+msg("DONE: actions 1-3 complete for %d sample(s)", nrow(samples))

@@ -1,7 +1,7 @@
 ---
 name: seurat-annotate
 description: Marker-driven cell-type annotation for clustered scRNA-seq data using AddModuleScore (scRNA-seq workflow Action 10); consumes integrated_clustered.rds from seurat-cluster
-version: 1.0.0
+version: 1.0.1
 platforms: [linux]
 metadata:
   hermes:
@@ -49,37 +49,41 @@ Write `markers.tsv` (TAB-separated) with exactly two columns:
 - `set` — cell-type / marker-program name (e.g., `Keratinocytes`)
 - `gene` — one gene symbol per row
 
-Example for the radiation skin study:
+Example for the radiation skin study. This snippet uses `printf '%b\n'` so `set\tgene` is interpreted as a real TAB; after writing, verify with `awk -F'\t' 'NF!=2 {print "BAD:", $0}'`:
 
 ```bash
 {
   printf 'set\tgene\n'
-  printf '%s\n' \
-    'Keratinocytes	KRT14' \
-    'Keratinocytes	KRT5' \
-    'Keratinocytes	KRT1' \
-    'Keratinocytes	KRT10' \
-    'Keratinocytes	KRT6A' \
-    'Fibroblasts	COL1A1' \
-    'Fibroblasts	COL1A2' \
-    'Fibroblasts	DCN' \
-    'Fibroblasts	LUM' \
-    'Fibroblasts	SFRP2' \
-    'Fibroblasts	CTHRC1' \
-    'Endothelial_cells	PECAM1' \
-    'Endothelial_cells	VWF' \
-    'Endothelial_cells	KDR' \
-    'Endothelial_cells	CDH5' \
-    'T_cells	CD3D' \
-    'T_cells	CD3E' \
-    'T_cells	TRAC' \
-    'T_cells	IL7R' \
-    'NK_cells	NKG7' \
-    'NK_cells	GNLY' \
-    'NK_cells	KLRD1' \
-    'NK_cells	PRF1'
+  printf '%b\n' \
+    'Keratinocytes\tKRT14' \
+    'Keratinocytes\tKRT5' \
+    'Keratinocytes\tKRT1' \
+    'Keratinocytes\tKRT10' \
+    'Keratinocytes\tKRT6A' \
+    'Fibroblasts\tCOL1A1' \
+    'Fibroblasts\tCOL1A2' \
+    'Fibroblasts\tDCN' \
+    'Fibroblasts\tLUM' \
+    'Fibroblasts\tSFRP2' \
+    'Fibroblasts\tCTHRC1' \
+    'Endothelial_cells\tPECAM1' \
+    'Endothelial_cells\tVWF' \
+    'Endothelial_cells\tKDR' \
+    'Endothelial_cells\tCDH5' \
+    'T_cells\tCD3D' \
+    'T_cells\tCD3E' \
+    'T_cells\tTRAC' \
+    'T_cells\tIL7R' \
+    'NK_cells\tNKG7' \
+    'NK_cells\tGNLY' \
+    'NK_cells\tKLRD1' \
+    'NK_cells\tPRF1'
 } > "$DATA_DIR/markers.tsv"
+
+awk -F'\t' 'NF!=2 {print "BAD line:", $0; exit 1}' "$DATA_DIR/markers.tsv"
 ```
+
+If the awk check fails, the file does not contain real TABs — recreate it with the snippet above (not by typing \t literally). Any other correctly-tabbed format is also valid.
 
 Any number of marker sets and any gene count per set are valid.
 
@@ -120,9 +124,9 @@ PARAMS    min_markers=2 nbin=24 seed=1
 SETS      Keratinocytes: 5 of 5 genes present
 SETS      Fibroblasts: 6 of 6 genes present
 SETS      Endothelial_cells: 4 of 4 genes present
-SETS      T_cells: 4 of 4 genes present
+SETS      T_cells: 3 of 4 genes present
 SETS      NK_cells: 4 of 4 genes present
-SCORE    5 module scores added
+SCORE    5 module scores added (clean names, no trailing 1)
 LABEL    cluster labels assigned by max mean score
 SAVED    integrated_annotated.rds, celltype_evidence.csv, tsne_celltypes.png
 DONE: action 10 complete
@@ -136,11 +140,8 @@ Run `seurat-cluster` first. This skill only consumes the clustered object.
 **`No marker sets passed the min_markers threshold`:**
 At least one set must have ≥ `MIN_MARKERS` genes present in the object. Check that the marker symbols match the reference genome used by the 10x dataset (e.g., human GRCh38 vs mouse mm10; gene-name casing).
 
-**`All scores are negative and clusters remain unlabeled`:**
-Usually means the marker sets do not fit the data at all — the tissue or reference genome is wrong. Review the per-set gene availability in the log.
-
-**Cluster gets a label with near-zero scores for every set:**
-A `WARN` line is emitted when the maximum mean score in a cluster row is below an evidence threshold. This is the PDF's "weak or conflicting" case — the label should be flagged for review, not trusted blindly.
+**Most labels are flagged WEAK:**
+This means the marker panel is too coarse for the dataset's true heterogeneity — likely untyped subtypes are being forced to the nearest label. Add more marker sets rather than trusting the weak labels.
 
 ## Verification
 
@@ -162,13 +163,14 @@ docker run --rm -v "$DATA_DIR":/data \
     ev <- read.csv("/data/celltype_evidence.csv", row.names = 1)
     stopifnot(inherits(o, "Seurat"),
               "celltype_11" %in% colnames(o@meta.data),
+              is.factor(o$celltype_11),
               nrow(ev) == length(levels(o$seurat_clusters)),
               nlevels(o$celltype_11) >= 1)
     cat("PASS:", nlevels(o$celltype_11), "labels |", ncol(o), "cells |",
         nrow(ev), "cluster rows\n")'
 ```
 
-Pass criteria: `integrated_annotated.rds` contains a `celltype_11` column, the evidence table has one row per cluster, and at least one label was assigned.
+Pass criteria: `integrated_annotated.rds` contains a factor `celltype_11`, the evidence table has one row per cluster, and at least one label was assigned.
 
 ## Key Parameters
 

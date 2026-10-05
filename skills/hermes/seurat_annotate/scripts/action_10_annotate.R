@@ -56,7 +56,8 @@ if (packageVersion("SeuratObject") >= "5.0.0")
 
 # ---- Score each marker set that has enough present genes -----------------------
 marker_sets <- split(mk$gene, mk$set)
-score_cols <- c()
+score_map   <- character(0)   # maps clean set name -> AddModuleScore column name
+kept_sets   <- character(0)
 
 for (set in names(marker_sets)) {
   genes <- marker_sets[[set]]
@@ -66,45 +67,50 @@ for (set in names(marker_sets)) {
     msg("SKIP     %s: only %d available (need >= %d)", set, length(avail), MIN_MARKERS)
     next
   }
+  colname <- paste0(set, "1")               # what AddModuleScore actually creates
   integrated <- AddModuleScore(integrated,
                                features = list(avail),
                                name = set,
                                assay = "RNA",
                                nbin = NBIN,
                                seed = SCORE_SEED)
-  score_cols <- c(score_cols, paste0(set, "1"))
+  score_map[[set]] <- colname
+  kept_sets        <- c(kept_sets, set)
 }
 
-if (length(score_cols) == 0)
+if (length(kept_sets) == 0)
   stop("No marker sets passed the min_markers threshold; check markers.tsv and reference genome")
 
-msg("SCORE    %d module scores added", length(score_cols))
+msg("SCORE    %d module scores added (clean names, no trailing 1)", length(kept_sets))
 
 # ---- Assign labels by highest mean score per cluster -------------------------
-avg <- sapply(score_cols, function(s)
-  tapply(integrated@meta.data[[s]], integrated$seurat_clusters, mean))
+avg <- sapply(kept_sets, function(s) {
+  colname <- score_map[[s]]
+  tapply(integrated@meta.data[[colname]], integrated$seurat_clusters, mean)
+})
 rownames(avg) <- levels(integrated$seurat_clusters)
 
-# Identify weak/conflicting labels (max score per cluster below a heuristic
-# evidence threshold).  The threshold here is the 10th percentile of all
-# per-cluster max scores; anything below that is flagged but still assigned
-# the top label per the PDF's decision note ("flag for review").
 max_per_cluster <- apply(avg, 1, max, na.rm = TRUE)
-evidence_threshold <- quantile(max_per_cluster, probs = 0.10, na.rm = TRUE)
-cluster_label <- colnames(avg)[max.col(avg)]
+cluster_label   <- colnames(avg)[max.col(avg)]
 names(cluster_label) <- rownames(avg)
 
-integrated$celltype_11 <- unname(cluster_label[as.character(integrated$seurat_clusters)])
+# Flag weak/conflicting evidence: any cluster whose best score is <= 0
+# (below the module-score background baseline) is not meaningfully supported.
+evidence_threshold <- 0.0
 
-# Build evidence table with flag column
+integrated$celltype_11 <- factor(unname(cluster_label[as.character(integrated$seurat_clusters)]),
+                                   levels = kept_sets)
+
+# Build evidence table
 evidence <- as.data.frame(avg)
 evidence$assigned <- cluster_label
 evidence$evidence_score <- max_per_cluster
-evidence$flag <- ifelse(max_per_cluster < evidence_threshold, "WEAK", "OK")
+evidence$flag <- ifelse(max_per_cluster <= evidence_threshold, "WEAK", "OK")
 
 write.csv(evidence, file.path(DATA_DIR, "celltype_evidence.csv"))
+n_weak <- sum(evidence$flag == "WEAK")
 msg("LABEL    cluster labels assigned by max mean score; %d of %d clusters flagged WEAK",
-    sum(evidence$flag == "WEAK"), nrow(evidence))
+    n_weak, nrow(evidence))
 
 # ---- Visualize labels ---------------------------------------------------------
 library(ggplot2)

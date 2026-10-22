@@ -19,6 +19,13 @@ A **Skill** in Tonina is a self-contained tool or utility designed to be invoked
 
 Each Skill is located in its own directory within `/skills/` and comes with a `SKILL.md` documentation file that includes machine-readable metadata enabling agents to understand and execute the tool appropriately.
 
+Skills are provided in two platform-specific flavours, each in its own tree:
+
+- `skills/hermes/<skill-name>/SKILL.md` — Hermes format (`metadata.hermes`), with the fuller `When to Use` / `Procedure` / `Pitfalls` / `Verification` structure
+- `skills/openclaw/<skill-name>/SKILL.md` — OpenClaw format (`metadata.openclaw`), more concise and action-oriented
+
+The Hermes variant is the reference version; the OpenClaw variant carries the same commands and examples in a shorter form.
+
 Tonina runs wherever Hermes runs, making it ideal for both local development and production environments in Linux/macOS systems and the [DNALinux](https://dnalinux.com/) platform.
 
 ## Available Skills
@@ -27,37 +34,37 @@ Tonina includes the following skills for bioinformatics analysis:
 
 ### Sequence Quality & Processing
 
-- **[FastQC](skills/fastqc/SKILL.md)** — Quality control for raw sequencing data; identifies potential artifacts and systematic errors
-- **[Fastp](skills/fastp/SKILL.md)** — All-in-one FASTQ preprocessor for adapter trimming, filtering, and QC
-- **[SeqSample](skills/seqsample/SKILL.md)** — Lightweight Python utility to subsample or generate FASTA/FASTQ sequences for testing and validation
+- **[FastQC](skills/hermes/fastqc/SKILL.md)** — Quality control for raw sequencing data; identifies potential artifacts and systematic errors
+- **[Fastp](skills/hermes/fastp/SKILL.md)** — All-in-one FASTQ preprocessor for adapter trimming, filtering, and QC
+- **[SeqSample](skills/hermes/seqsample/SKILL.md)** — Lightweight Python utility to subsample or generate FASTA/FASTQ sequences for testing and validation
 
 ### Sequence Alignment & Mapping
 
-- **[BWA-MEM](skills/bwamem/SKILL.md)** — Map short reads to reference genomes with high accuracy
-- **[Minimap2](skills/minimap2/SKILL.md)** — Versatile sequence alignment for DNA, mRNA, and long reads against large databases
+- **[BWA-MEM](skills/hermes/bwamem/SKILL.md)** — Map short reads to reference genomes with high accuracy
+- **[Minimap2](skills/hermes/minimap2/SKILL.md)** — Versatile sequence alignment for DNA, mRNA, and long reads against large databases
 
 ### Genome Assembly
 
-- **[SPAdes](skills/spades/SKILL.md)** — De novo genome assembler for bacteria, plasmids, single-cell, and metagenomic data
+- **[SPAdes](skills/hermes/spades/SKILL.md)** — De novo genome assembler for bacteria, plasmids, single-cell, and metagenomic data
 
 ### Sequence Analysis & Primer Design
 
-- **[Primer3](skills/primer3/SKILL.md)** — Design PCR primers, hybridization probes, and sequencing primers from DNA sequences
+- **[Primer3](skills/hermes/primer3/SKILL.md)** — Design PCR primers, hybridization probes, and sequencing primers from DNA sequences
 
 ### Clustering & Alignment
 
-- **[Clustal Omega](skills/clustalo/SKILL.md)** — Multiple sequence alignment for proteins and nucleotides at large scale
-- **[MUSCLE](skills/muscle/SKILL.md)** — Fast and accurate multiple sequence alignment
+- **[Clustal Omega](skills/hermes/clustalo/SKILL.md)** — Multiple sequence alignment for proteins and nucleotides at large scale
+- **[MUSCLE](skills/hermes/muscle/SKILL.md)** — Fast and accurate multiple sequence alignment
 
 ### Data Retrieval & Processing
 
-- **[NCBI Datasets](skills/ncbidatasets/SKILL.md)** — Download genomic data and metadata from NCBI databases
-- **[SRA Toolkit](skills/sra-toolkit/SKILL.md)** — Retrieve, convert, and analyze sequencing data from the NCBI Sequence Read Archive
+- **[NCBI Datasets](skills/hermes/ncbidatasets/SKILL.md)** — Download genomic data and metadata from NCBI databases
+- **[SRA Toolkit](skills/hermes/sra-toolkit/SKILL.md)** — Retrieve, convert, and analyze sequencing data from the NCBI Sequence Read Archive
 
 ### File Manipulation & Coordinate Operations
 
-- **[Tabix](skills/tabix/SKILL.md)** — Fast indexing and querying of TAB-delimited genomic position files
-- **[BCFtools](skills/bcftools/SKILL.md)** — Variant calling and VCF/BCF file manipulation
+- **[Tabix](skills/hermes/tabix/SKILL.md)** — Fast indexing and querying of TAB-delimited genomic position files
+- **[BCFtools](skills/hermes/bcftools/SKILL.md)** — Variant calling and VCF/BCF file manipulation
 
 ## Relationship to OmicsContainers
 
@@ -87,9 +94,9 @@ Most Tonina Skills require either:
 
 ### Using a Skill
 
-1. Navigate to the skill's directory:
+1. Navigate to the skill's directory (pick the platform tree you need):
    ```bash
-   cd skills/<skill-name>/
+   cd skills/hermes/<skill-name>/    # or skills/openclaw/<skill-name>/
    ```
 
 2. Read the documentation:
@@ -105,7 +112,7 @@ Here's a typical workflow using multiple Tonina Skills:
 
 ```bash
 # 1. Check quality of raw sequencing data
-cd skills/fastqc
+cd skills/hermes/fastqc
 docker run ... dnalinux/fastqc reads.fastq.gz
 
 # 2. Subsample reads for testing (using SeqSample)
@@ -156,8 +163,8 @@ Tonina is licensed under the [GNU General Public License v3 (GPL-3.0)](LICENSE).
 
 We welcome contributions! To add a new skill or improve existing documentation:
 
-1. Create a new directory under `skills/` with your tool name
-2. Add a `SKILL.md` file following the documentation structure of existing skills
+1. Create a new directory under `skills/hermes/` and `skills/openclaw/` with your tool name
+2. Add a `SKILL.md` file to each, following the documentation structure of existing skills in that tree
 3. Include practical examples and clear use cases
 4. Submit a pull request
 

@@ -30,6 +30,10 @@ Tabix indexes bgzipped TAB-delimited genome position files (BED, GFF, VCF, SAM) 
 - Unsorted files → Sort first
 - Standard gzip-compressed files → Use bgzip instead
 
+**If no region was specified by the user:**
+Run `tabix -l <file>` (or `tabix --list-chroms <file>` once the index exists) to list the
+available sequence names, then ask the user which chromosome and range to query.
+
 ## Procedure
 
 ### 1. Index a file
@@ -63,7 +67,10 @@ docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/tabix \
 
 **Region format:** `chr:begin-end` (1-based, inclusive)
 
-Multiple regions:
+Strip commas from coordinates before building the command (e.g. `chr1:10,000,000-20,000,000`
+becomes `chr1:10000000-20000000`), otherwise the command breaks.
+
+Multiple regions (space-separated):
 ```bash
 docker run --rm -v $(pwd):/ftmp -w /ftmp dnalinux/tabix \
   tabix \
@@ -112,6 +119,15 @@ sort -k1,1 -k2,2n file.bed | bgzip > file.bed.gz
 For files that aren't standard VCF/BED/GFF/SAM, specify format:
 ```bash
 tabix -p bed custom_file.gz
+```
+
+**Column specifiers for non-standard files:**
+If the file is not a standard VCF/BED/GFF/SAM file — or it has extra columns before the
+position columns — you must specify `-p` and optionally `-s` (sequence name column), `-b`
+(start column) and `-e` (end column). Without this, tabix may create a broken index while
+exiting with code 0:
+```bash
+tabix -p bed -s 1 -b 2 -e 3 custom_file.gz
 ```
 
 **Positions exceeding 512 Mbp:**

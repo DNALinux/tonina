@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Unit tests for randomsplit/main.py.
+"""Unit tests for seqsample/main.py.
 
 Usage
 -----
-Run from this directory (skills/randomsplit/):
+Run from this directory (skills/<platform>/seqsample/):
 
     python3 -m unittest main_test            # run all tests
     python3 -m unittest main_test -v         # verbose output
@@ -16,7 +16,7 @@ Run a single test class or method:
 
 Run from any directory:
 
-    python3 -m unittest discover -s /Users/sb/projects/dnalinux/tonina/skills/randomsplit -p 'main_test.py'
+    python3 -m unittest discover -s skills/<platform>/seqsample -p 'main_test.py'
 
 Requirements
 ------------

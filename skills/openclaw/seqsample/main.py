@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """
-randomsplit.py — Randomly subsample a FASTQ or FASTA file by percentage.
+main.py — Randomly subsample a FASTQ or FASTA file by percentage.
 
 File type (FASTQ vs FASTA) and compression (gzip) are detected from the
 file content, not from the file extension.
 
 Usage:
-    python randomsplit.py -p 10 -i input.fastq            # 10% to stdout
-    python randomsplit.py -p 25 -i input.fasta.gz         # gzip input supported
-    python randomsplit.py -p 10 -i input.fa  -s 42        # fixed random seed
-    python randomsplit.py -u 5  -i input.fastq            # exactly 5 random records from input
-    python randomsplit.py -u 5  -i input.fastq --order head  # first 5 records
-    python randomsplit.py -u 20 -t fasta                  # generate 20 random FASTA records
-    python randomsplit.py -u 50 -t fastq -s 1 -o x.fq     # generate 50 FASTQ records to file
+    python main.py -p 10 -i input.fastq            # 10% to stdout
+    python main.py -p 25 -i input.fasta.gz         # gzip input supported
+    python main.py -p 10 -i input.fa  -s 42        # fixed random seed
+    python main.py -u 5  -i input.fastq            # exactly 5 random records from input
+    python main.py -u 5  -i input.fastq --order head  # first 5 records
+    python main.py -u 20 -t fasta                  # generate 20 random FASTA records
+    python main.py -u 50 -t fastq -s 1 -o x.fq     # generate 50 FASTQ records to file
 """
 
 import argparse
@@ -23,7 +23,7 @@ import sys
 
 
 def parse_args():
-    """Parse command-line arguments for randomsplit.
+    """Parse command-line arguments for seqsample.
 
     Parameters
     ----------

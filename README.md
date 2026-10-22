@@ -30,41 +30,67 @@ Tonina runs wherever Hermes runs, making it ideal for both local development and
 
 ## Available Skills
 
-Tonina includes the following skills for bioinformatics analysis:
+Tonina includes 27 skills for bioinformatics analysis. The links below point at the Hermes
+format; the OpenClaw variants live in `skills/openclaw/<skill-name>/SKILL.md` (20 of the 27
+are available there — the scRNA-seq and GEO skills are Hermes-only, and Linux-only).
 
 ### Sequence Quality & Processing
 
 - **[FastQC](skills/hermes/fastqc/SKILL.md)** — Quality control for raw sequencing data; identifies potential artifacts and systematic errors
 - **[Fastp](skills/hermes/fastp/SKILL.md)** — All-in-one FASTQ preprocessor for adapter trimming, filtering, and QC
+- **[PEAR](skills/hermes/pear/SKILL.md)** — Merge overlapping paired-end Illumina reads into single assembled sequences
 - **[SeqSample](skills/hermes/seqsample/SKILL.md)** — Lightweight Python utility to subsample or generate FASTA/FASTQ sequences for testing and validation
 
 ### Sequence Alignment & Mapping
 
 - **[BWA-MEM](skills/hermes/bwamem/SKILL.md)** — Map short reads to reference genomes with high accuracy
 - **[Minimap2](skills/hermes/minimap2/SKILL.md)** — Versatile sequence alignment for DNA, mRNA, and long reads against large databases
+- **[Samtools](skills/hermes/samtools/SKILL.md)** — Manipulate, convert, sort, index, and query SAM, BAM, and CRAM alignment files
 
 ### Genome Assembly
 
 - **[SPAdes](skills/hermes/spades/SKILL.md)** — De novo genome assembler for bacteria, plasmids, single-cell, and metagenomic data
 
+### Variant Discovery & Manipulation
+
+- **[GATK](skills/hermes/gatk/SKILL.md)** — SNP and indel calling for germline and somatic variants in high-throughput sequencing data
+- **[BCFtools](skills/hermes/bcftools/SKILL.md)** — Variant calling and VCF/BCF file manipulation
+
 ### Sequence Analysis & Primer Design
 
 - **[Primer3](skills/hermes/primer3/SKILL.md)** — Design PCR primers, hybridization probes, and sequencing primers from DNA sequences
+- **[Biopython](skills/hermes/biopython/SKILL.md)** — Python toolkit for molecular biology: sequence manipulation, file parsing, BLAST, phylogenetics, and structural bioinformatics
 
-### Clustering & Alignment
+### Clustering, Alignment & Phylogeny
 
 - **[Clustal Omega](skills/hermes/clustalo/SKILL.md)** — Multiple sequence alignment for proteins and nucleotides at large scale
 - **[MUSCLE](skills/hermes/muscle/SKILL.md)** — Fast and accurate multiple sequence alignment
+- **[CVTree](skills/hermes/cvtree/SKILL.md)** — Generate phylogenetic trees from whole-genome sequences using composition vector analysis
+- **[Jellyfish](skills/hermes/jellyfish/SKILL.md)** — Fast, memory-efficient counting of k-mers in DNA sequences
 
 ### Data Retrieval & Processing
 
 - **[NCBI Datasets](skills/hermes/ncbidatasets/SKILL.md)** — Download genomic data and metadata from NCBI databases
 - **[SRA Toolkit](skills/hermes/sra-toolkit/SKILL.md)** — Retrieve, convert, and analyze sequencing data from the NCBI Sequence Read Archive
+- **[GEO Sample Download](skills/hermes/geo_download/SKILL.md)** — Download the processed supplementary files of any GEO sample (GSM accession), such as 10x count matrices *(Linux only, Hermes only)*
 
 ### File Manipulation & Coordinate Operations
 
 - **[Tabix](skills/hermes/tabix/SKILL.md)** — Fast indexing and querying of TAB-delimited genomic position files
-- **[BCFtools](skills/hermes/bcftools/SKILL.md)** — Variant calling and VCF/BCF file manipulation
+- **[bedGraph to bigWig](skills/hermes/bedgraphtobigwig/SKILL.md)** — Convert bedGraph coverage files to binary bigWig format for efficient visualization
+
+### Single-Cell RNA-seq (Seurat)
+
+A ten-step scRNA-seq workflow, split into six skills that chain through `.rds` objects.
+All run in the `dnalinux/scrnaseq_r_workflow` container and are Linux-only. The workflow starts
+from the [GEO Sample Download](#data-retrieval--processing) skill above.
+
+- **[Seurat Load + QC](skills/hermes/seurat_load_qc/SKILL.md)** — Load 10x count matrices into Seurat and apply cell-level QC (Actions 1-3)
+- **[Seurat Normalize + HVG](skills/hermes/seurat_normalize_hvg/SKILL.md)** — LogNormalize each sample and select highly variable genes with VST (Actions 4-5)
+- **[Seurat HVG Report](skills/hermes/seurat_hvg_report/SKILL.md)** — Tabulate and visualize the selected HVGs per condition, with cross-condition comparison
+- **[Seurat Integration + RPCA](skills/hermes/seurat_integrate_rpca/SKILL.md)** — Select shared integration features, run per-sample PCA, and perform RPCA anchor integration (Actions 6-7)
+- **[Seurat Clustering + t-SNE](skills/hermes/seurat_cluster/SKILL.md)** — Build the latent space and neighbor graph, cluster, and compute t-SNE (Actions 8-9)
+- **[Seurat Cell-Type Annotation](skills/hermes/seurat_annotate/SKILL.md)** — Marker-driven cell-type annotation using AddModuleScore (Action 10)
 
 ## Relationship to OmicsContainers
 
